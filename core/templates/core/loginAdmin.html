@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Administrador - Ferremas</title>
+    <!-- CSS de Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+</head>
+<body style="background-color: #D3D3D3;">
+
+    <div class="container d-flex justify-content-center align-items-center min-vh-100">
+        <div class="login-container p-4 border rounded bg-white shadow w-100" style="max-width: 400px; background-color: #B0C4DE;">
+            <div class="text-center">
+                <i class="bi bi-tools mb-3" style="font-size: 4rem; color: #0d6efd;"></i>
+                <h2 class="mb-4">Acceso Administrador</h2>
+            </div>
+
+            <!-- Mostramos los mensajes -->
+            {% if messages %}
+            <div class="messages mb-3">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Modificamos el formulario para asegurarnos que los datos se envían correctamente -->
+            <form method="POST" action="{% url 'loginAdmin' %}" id="loginForm">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="username" class="form-label">Nombre de Administrador</label>
+                    <input type="text" class="form-control" id="username" name="username" required>
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label">Contraseña</label>
+                    <input type="password" class="form-control" id="password" name="password" required>
+                </div>
+                <button type="submit" class="btn btn-danger w-100">Ingresar como Admin</button>
+            </form>
+
+            <!-- Agregamos un script para depuración -->
+            <script>
+                document.getElementById('loginForm').addEventListener('submit', function(e) {
+                    console.log('Formulario enviado');
+                    console.log('Username:', document.getElementById('username').value);
+                });
+            </script>
+        </div>
+    </div>
+
+    <!-- JS de Bootstrap -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

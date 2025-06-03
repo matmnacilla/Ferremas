@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Catálogo de Productos - Ferremas</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <style>
+    :root {
+      --primary-color: #dc3545;
+      --secondary-color: #6c757d;
+      --background-color: #f8f9fa;
+    }
+    
+    body {
+      background-color: var(--background-color);
+    }
+    
+    .navbar {
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .product-card {
+      transition: transform 0.2s, box-shadow 0.2s;
+      height: 100%;
+    }
+    
+    .product-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    
+    .product-image {
+      height: 200px;
+      object-fit: cover;
+      width: 100%;
+    }
+    
+    .filter-section {
+      background-color: white;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      margin-bottom: 30px;
+    }
+    
+    .price-tag {
+      font-size: 1.25rem;
+      font-weight: bold;
+      color: var(--primary-color);
+    }
+    
+    .stock-badge {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 1;
+    }
+    
+    .category-badge {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 1;
+    }
+    
+    .pagination {
+      margin-top: 2rem;
+    }
+    
+    .search-box {
+      position: relative;
+    }
+    
+    .search-box i {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--secondary-color);
+    }
+    
+    .search-box input {
+      padding-left: 35px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-danger">
+    <div class="container">
+      <a class="navbar-brand" href="{% url 'index' %}">
+        <i class="bi bi-tools me-2"></i>
+        Ferremas
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'index' %}">Inicio</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link active" href="{% url 'catalogo' %}">Catálogo</a>
+          </li>
+          {% if user.is_authenticated %}
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'carrito' %}">
+                <i class="bi bi-cart3"></i> Carrito
+              </a>
+            </li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Contenido Principal -->
+  <div class="container py-4">
+    <!-- Filtro de Ofertas -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+          <h2 class="mb-0">
+            {% if mostrar_ofertas %}
+              <span class="badge bg-danger me-2">Ofertas</span>
+              Productos en Oferta
+            {% else %}
+              Catálogo de Productos
+            {% endif %}
+          </h2>
+          <a href="{% if mostrar_ofertas %}{% url 'catalogo' %}{% else %}{% url 'catalogo' %}?ofertas=true{% endif %}" 
+             class="btn {% if mostrar_ofertas %}btn-outline-danger{% else %}btn-danger{% endif %}">
+            {% if mostrar_ofertas %}
+              <i class="bi bi-x-circle me-1"></i>Ver Todos los Productos
+            {% else %}
+              <i class="bi bi-tag me-1"></i>Ver Solo Ofertas
+            {% endif %}
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filtros y Productos -->
+    <div class="row">
+      <!-- Sidebar con Filtros -->
+      <div class="col-md-3">
+        <div class="card mb-4">
+          <div class="card-header bg-primary text-white">
+            <h5 class="card-title mb-0">Filtros</h5>
+          </div>
+          <div class="card-body">
+            <form method="get" action="{% url 'catalogo' %}">
+              {% if mostrar_ofertas %}
+                <input type="hidden" name="ofertas" value="true">
+              {% endif %}
+              
+              <div class="mb-3">
+                <label class="form-label">Categorías</label>
+                <div class="list-group">
+                  {% for categoria in categorias %}
+                    <label class="list-group-item">
+                      <input class="form-check-input me-1" type="checkbox" name="categoria" value="{{ categoria.nombre }}">
+                      {{ categoria.nombre }}
+                    </label>
+                  {% endfor %}
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Rango de Precios</label>
+                <div class="row g-2">
+                  <div class="col-6">
+                    <input type="number" name="precio_min" class="form-control" placeholder="Mín" 
+                           min="0" step="500" value="{{ request.GET.precio_min|default:'' }}"
+                           oninput="validatePriceInput(this, 'min')">
+                  </div>
+                  <div class="col-6">
+                    <input type="number" name="precio_max" class="form-control" placeholder="Máx" 
+                           min="0" step="500" value="{{ request.GET.precio_max|default:'' }}"
+                           oninput="validatePriceInput(this, 'max')">
+                  </div>
+                </div>
+              </div>
+              
+              <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary">Aplicar Filtros</button>
+                <a href="{% if mostrar_ofertas %}{% url 'catalogo' %}?ofertas=true{% else %}{% url 'catalogo' %}{% endif %}" 
+                   class="btn btn-outline-secondary">Limpiar Filtros</a>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lista de Productos -->
+      <div class="col-md-9">
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+          {% for producto in productos %}
+          <div class="col">
+            <div class="card h-100">
+              {% if producto.imagen %}
+              <img src="{{ producto.imagen.url }}" class="card-img-top" alt="{{ producto.nombre }}" style="height: 200px; object-fit: cover;">
+              {% else %}
+              <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                <i class="bi bi-tools" style="font-size: 4rem; color: #6c757d;"></i>
+              </div>
+              {% endif %}
+              <div class="card-body">
+                <h5 class="card-title">{{ producto.nombre }}</h5>
+                <p class="card-text">{{ producto.descripcion|truncatechars:100 }}</p>
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    {% if producto.precio_oferta %}
+                    <small class="text-muted text-decoration-line-through">${{ producto.precio|floatformat:0 }}</small>
+                    <span class="ms-2 fw-bold text-danger">${{ producto.precio_oferta|floatformat:0 }}</span>
+                    <span class="badge bg-danger ms-2">-{{ producto.porcentaje_descuento }}%</span>
+                    {% else %}
+                    <span class="fw-bold">${{ producto.precio|floatformat:0 }}</span>
+                    {% endif %}
+                  </div>
+                  <a href="{% url 'detalle_producto' producto.id %}" class="btn btn-primary btn-sm">Ver detalles</a>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% empty %}
+          <div class="col-12">
+            <div class="alert alert-info text-center">
+              {% if mostrar_ofertas %}
+                No hay productos en oferta disponibles en este momento.
+              {% else %}
+                No hay productos disponibles en este momento.
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-dark text-white text-center py-4 mt-5">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-4">
+          <h5>Ferremas</h5>
+          <p class="mb-0">Tu ferretería de confianza</p>
+        </div>
+        <div class="col-md-4">
+          <h5>Contacto</h5>
+          <p class="mb-0">
+            <i class="bi bi-telephone me-2"></i>+56 9 1234 5678<br>
+            <i class="bi bi-envelope me-2"></i>contacto@ferremas.cl
+          </p>
+        </div>
+        <div class="col-md-4">
+          <h5>Síguenos</h5>
+          <div class="social-links">
+            <a href="#" class="text-white me-2"><i class="bi bi-facebook"></i></a>
+            <a href="#" class="text-white me-2"><i class="bi bi-instagram"></i></a>
+            <a href="#" class="text-white"><i class="bi bi-whatsapp"></i></a>
+          </div>
+        </div>
+      </div>
+      <hr class="my-4">
+      <p class="mb-0">&copy; 2025 Ferremas. Todos los derechos reservados.</p>
+    </div>
+  </footer>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- CSRF Token -->
+  {% csrf_token %}
+
+  <!-- Variables globales para el estado de autenticación -->
+  <script>
+    const isAuthenticated = {% if user.is_authenticated %}true{% else %}false{% endif %};
+    const loginUrl = "{% url 'login' %}?next={{ request.path }}";
+  </script>
+
+  <script>
+    // Mantener una copia de los productos originales
+    const productosOriginales = [];
+    
+    // Función para inicializar los productos
+    function inicializarProductos() {
+      const productCards = document.querySelectorAll('.product-card');
+      productosOriginales.length = 0; // Limpiar array
+      productCards.forEach(card => {
+        productosOriginales.push({
+          element: card,
+          category: (card.getAttribute('data-category') || '').toLowerCase().trim(),
+          price: parseFloat(card.getAttribute('data-price')) || 0,
+          title: (card.querySelector('.card-title')?.textContent || '').toLowerCase(),
+          description: (card.querySelector('.card-text')?.textContent || '').toLowerCase()
+        });
+      });
+    }
+
+    // Llamar a inicializarProductos cuando el DOM esté listo
+    document.addEventListener('DOMContentLoaded', inicializarProductos);
+
+    function filterProducts() {
+      const search = (document.getElementById('search')?.value || '').toLowerCase();
+      const categoryFilter = (document.getElementById('categoryFilter')?.value || '').toLowerCase().trim();
+      const minPriceInput = document.getElementById('minPrice');
+      const maxPriceInput = document.getElementById('maxPrice');
+      
+      // Validar precios
+      let minPrice = 0;
+      let maxPrice = Infinity;
+      
+      if (minPriceInput?.value) {
+        const minValue = parseInt(minPriceInput.value);
+        if (minValue < 0) {
+          alert('El precio mínimo no puede ser negativo');
+          minPriceInput.value = '0';
+          minPrice = 0;
+        } else {
+          minPrice = minValue;
+        }
+      }
+      
+      if (maxPriceInput?.value) {
+        const maxValue = parseInt(maxPriceInput.value);
+        if (maxValue < 0) {
+          alert('El precio máximo no puede ser negativo');
+          maxPriceInput.value = '0';
+          maxPrice = 0;
+        } else if (maxValue < minPrice) {
+          alert('El precio máximo no puede ser menor que el precio mínimo');
+          maxPriceInput.value = minPrice.toString();
+          maxPrice = minPrice;
+        } else {
+          maxPrice = maxValue;
+        }
+      }
+      
+      let visibleCount = 0;
+      const productList = document.getElementById('productList');
+      
+      if (!productList) return;
+      
+      // Si no hay productos originales, inicializarlos
+      if (productosOriginales.length === 0) {
+        inicializarProductos();
+      }
+      
+      // Filtrar productos
+      productosOriginales.forEach(producto => {
+        if (!producto.element) return;
+        
+        const matchesSearch = producto.title.includes(search) || producto.description.includes(search);
+        const matchesCategory = !categoryFilter || producto.category === categoryFilter;
+        const matchesPrice = producto.price >= minPrice && producto.price <= maxPrice;
+        
+        if (matchesSearch && matchesCategory && matchesPrice) {
+          producto.element.style.display = '';
+          visibleCount++;
+        } else {
+          producto.element.style.display = 'none';
+        }
+      });
+      
+      // Manejar mensaje de no resultados
+      const noResults = document.querySelector('#productList .col-12.text-center');
+      if (visibleCount === 0) {
+        if (!noResults) {
+          // Guardar el contenido original si no está guardado
+          if (!productList.hasAttribute('data-original-content')) {
+            productList.setAttribute('data-original-content', productList.innerHTML);
+          }
+          
+          // Mostrar mensaje de no resultados
+          productList.innerHTML = `
+            <div class="col-12 text-center py-5">
+              <i class="bi bi-emoji-frown" style="font-size: 3rem;"></i>
+              <h3 class="mt-3">No se encontraron productos</h3>
+              <p class="text-muted">Intenta con otros filtros o vuelve más tarde</p>
+            </div>
+          `;
+        }
+      } else if (noResults) {
+        // Restaurar productos originales
+        const originalContent = productList.getAttribute('data-original-content');
+        if (originalContent) {
+          productList.innerHTML = originalContent;
+          // Reinicializar productos después de restaurar
+          inicializarProductos();
+          // Volver a aplicar filtros
+          filterProducts();
+        }
+      }
+    }
+
+    function resetFilters() {
+      const searchInput = document.getElementById('search');
+      const categoryFilter = document.getElementById('categoryFilter');
+      const minPriceInput = document.getElementById('minPrice');
+      const maxPriceInput = document.getElementById('maxPrice');
+      const productList = document.getElementById('productList');
+      
+      if (searchInput) searchInput.value = '';
+      if (categoryFilter) categoryFilter.value = '';
+      if (minPriceInput) minPriceInput.value = '';
+      if (maxPriceInput) maxPriceInput.value = '';
+      
+      if (!productList) return;
+      
+      // Restaurar todos los productos
+      const originalContent = productList.getAttribute('data-original-content');
+      
+      if (originalContent) {
+        productList.innerHTML = originalContent;
+        productList.removeAttribute('data-original-content');
+        // Reinicializar productos
+        inicializarProductos();
+      }
+      
+      // Mostrar todos los productos
+      productosOriginales.forEach(producto => {
+        if (producto.element) {
+          producto.element.style.display = '';
+        }
+      });
+    }
+
+    function agregarAlCarrito(productoId) {
+      const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+      
+      if (!csrfToken) {
+        console.error('No se encontró el token CSRF');
+        return;
+      }
+
+      if (!isAuthenticated) {
+        window.location.href = loginUrl;
+        return;
+      }
+
+      // Obtener el stock del producto desde el elemento del DOM
+      const productCard = document.querySelector(`.product-card[data-product-id="${productoId}"]`);
+      const stock = parseInt(productCard?.getAttribute('data-stock') || '0');
+      
+      if (stock <= 0) {
+        alert('Lo sentimos, este producto no tiene stock disponible');
+        return;
+      }
+
+      // Crear y mostrar el diálogo de cantidad
+      const cantidad = prompt(`Ingrese la cantidad deseada (stock disponible: ${stock}):`, '1');
+      
+      // Validar la entrada
+      if (cantidad === null) return; // Usuario canceló
+      
+      const cantidadNum = parseInt(cantidad);
+      if (isNaN(cantidadNum) || cantidadNum <= 0) {
+        alert('Por favor ingrese una cantidad válida mayor a 0');
+        return;
+      }
+      
+      if (cantidadNum > stock) {
+        alert(`Lo sentimos, solo hay ${stock} unidades disponibles`);
+        return;
+      }
+
+      // Realizar la petición al servidor
+      fetch(`/carrito/agregar/${productoId}/`, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': csrfToken,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ cantidad: cantidadNum })
+      })
+      .then(response => {
+        if (!response.ok) {
+          return response.json().then(data => {
+            throw new Error(data.error || 'Error en la respuesta del servidor');
+          });
+        }
+        return response.json();
+      })
+      .then(data => {
+        if (data.success) {
+          alert(`Se agregaron ${cantidadNum} unidades al carrito`);
+        } else {
+          alert(data.error || 'Error al agregar el producto');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert(error.message || 'Error al agregar el producto al carrito');
+      });
+    }
+
+    function validatePriceInput(input, type) {
+      const value = parseInt(input.value);
+      const minPriceInput = document.getElementById('minPrice');
+      const maxPriceInput = document.getElementById('maxPrice');
+      
+      if (isNaN(value) || value < 0) {
+        input.value = '0';
+        return;
+      }
+      
+      if (type === 'min') {
+        const maxValue = parseInt(maxPriceInput.value);
+        if (!isNaN(maxValue) && value > maxValue) {
+          alert('El precio mínimo no puede ser mayor que el precio máximo');
+          input.value = maxValue.toString();
+        }
+      } else if (type === 'max') {
+        const minValue = parseInt(minPriceInput.value);
+        if (!isNaN(minValue) && value < minValue) {
+          alert('El precio máximo no puede ser menor que el precio mínimo');
+          input.value = minValue.toString();
+        }
+      }
+      
+      filterProducts();
+    }
+  </script>
+</body>
+</html>
+
