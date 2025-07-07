@@ -11,6 +11,8 @@
       background-color: #212529;
       color: white;
       padding: 20px;
+      display: flex;
+      flex-direction: column;
     }
     .sidebar a {
       color: white;
@@ -21,6 +23,19 @@
     .sidebar a:hover {
       background-color: #343a40;
       border-radius: 5px;
+    }
+    .sidebar .logout-section {
+      margin-top: auto;
+      padding-top: 20px;
+      border-top: 1px solid #495057;
+    }
+    .sidebar .logout-section a {
+      color: #dc3545 !important;
+      font-weight: bold;
+    }
+    .sidebar .logout-section a:hover {
+      background-color: #dc3545;
+      color: white !important;
     }
     .content {
       flex-grow: 1;
@@ -40,19 +55,107 @@
     <a href="#" onclick="showSection('preparar')">📦 Preparar</a>
     <a href="#" onclick="showSection('entregar')">🚚 Entregar</a>
     <a href="#" onclick="showSection('catalogo')">🛠 Catálogo</a>
+    <div class="logout-section">
+      <a href="#" onclick="confirmarLogout()">
+        <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
+      </a>
+    </div>
   </div>
 
   <div class="content">
     <!-- Órdenes -->
     <div id="ordenes" class="section active">
       <h2>Órdenes de Pedido</h2>
-      <table class="table table-hover">
-        <thead><tr><th>ID</th><th>Cliente</th><th>Estado</th><th>Acción</th></tr></thead>
-        <tbody>
-          <tr><td>#1001</td><td>Juan Pérez</td><td><span class="badge bg-warning">Pendiente</span></td><td><button class="btn btn-sm btn-primary">Ver</button></td></tr>
-          <tr><td>#1002</td><td>Lucía Torres</td><td><span class="badge bg-success">Preparado</span></td><td><button class="btn btn-sm btn-secondary">Ver</button></td></tr>
-        </tbody>
-      </table>
+      
+      <!-- Filtros -->
+      <div class="row mb-3">
+        <div class="col-md-3">
+          <select class="form-select" id="filtroEstado">
+            <option value="">Todos los estados</option>
+            <option value="confirmada">Confirmada</option>
+            <option value="enviada">Enviada</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <select class="form-select" id="filtroPrioridad">
+            <option value="">Todas las prioridades</option>
+            <option value="urgente">Urgente</option>
+            <option value="alta">Alta</option>
+            <option value="normal">Normal</option>
+          </select>
+        </div>
+        <div class="col-md-6">
+          <input type="text" class="form-control" id="busqueda" placeholder="Buscar por ID, cliente...">
+        </div>
+      </div>
+
+      <!-- Tabla de órdenes -->
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead class="table-dark">
+            <tr>
+              <th>ID</th>
+              <th>Fecha</th>
+              <th>Cliente</th>
+              <th>Total</th>
+              <th>Estado</th>
+              <th>Prioridad</th>
+              <th>Preparación</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for venta in ventas %}
+              {% if venta.estado == 'confirmada' %}
+              <tr id="orden-{{ venta.id }}" class="{% if venta.prioridad == 'urgente' %}table-danger{% elif venta.prioridad == 'alta' %}table-warning{% endif %}">
+                <td>#{{ venta.id }}</td>
+                <td>{{ venta.fecha }}</td>
+                <td>
+                  {{ venta.cliente }}
+                  <br>
+                  <small class="text-muted">{{ venta.telefono }}</small>
+                </td>
+                <td>${{ venta.total }}</td>
+                <td>
+                  <span class="badge bg-warning">Confirmada</span>
+                </td>
+                <td>
+                  {% if venta.prioridad == 'urgente' %}
+                    <span class="badge bg-danger">Urgente</span>
+                  {% elif venta.prioridad == 'alta' %}
+                    <span class="badge bg-warning">Alta</span>
+                  {% else %}
+                    <span class="badge bg-secondary">Normal</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <div class="progress w-100" style="height: 20px;">
+                    <div class="progress-bar {% if venta.estadisticas_preparacion.porcentaje_preparado == 100 %}bg-success{% else %}bg-info{% endif %}" 
+                         role="progressbar" 
+                         style="width: {{ venta.estadisticas_preparacion.porcentaje_preparado|floatformat:0 }}%">
+                      {{ venta.estadisticas_preparacion.productos_preparados }}/{{ venta.estadisticas_preparacion.total_productos }}
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <button class="btn btn-sm btn-primary" onclick="verDetalle({{ venta.id }})">
+                    <i class="bi bi-eye"></i> Ver
+                  </button>
+                  <button class="btn btn-sm btn-success" onclick="prepararPedido({{ venta.id }})">
+                    <i class="bi bi-box-seam"></i> Preparar
+                  </button>
+                  {% if venta.estadisticas_preparacion.porcentaje_preparado == 100 %}
+                  <button class="btn btn-sm btn-warning mt-1" onclick="confirmarEntregado({{ venta.id }})">
+                    <i class="bi bi-check2-circle"></i> Marcar como preparado
+                  </button>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endif %}
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     </div>
 
     <!-- Preparar -->
@@ -75,12 +178,45 @@
 
     <!-- Entregar -->
     <div id="entregar" class="section">
-      <h2>Entregar a Vendedores</h2>
-      <p>Pedidos listos para despacho:</p>
-      <div class="card p-3 mb-3">
-        <strong>Pedido #1002 - Lucía Torres</strong>
-        <p>Vendedor asignado: Pedro Ramírez</p>
-        <button class="btn btn-outline-primary">Confirmar Entrega</button>
+      <h2>Órdenes preparadas</h2>
+      <p>Pedidos listos para entregar:</p>
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead class="table-dark">
+            <tr>
+              <th>ID</th>
+              <th>Fecha</th>
+              <th>Cliente</th>
+              <th>Total</th>
+              <th>Estado</th>
+              <th>Prioridad</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for venta in ventas %}
+              {% if venta.estado == 'preparada' %}
+              <tr>
+                <td>#{{ venta.id }}</td>
+                <td>{{ venta.fecha }}</td>
+                <td>{{ venta.cliente }}</td>
+                <td>${{ venta.total }}</td>
+                <td><span class="badge bg-success">Preparada</span></td>
+                <td>
+                  {% if venta.prioridad == 'urgente' %}
+                    <span class="badge bg-danger">Urgente</span>
+                  {% elif venta.prioridad == 'alta' %}
+                    <span class="badge bg-warning">Alta</span>
+                  {% else %}
+                    <span class="badge bg-secondary">Normal</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endif %}
+            {% empty %}
+            <tr><td colspan="6" class="text-center">No hay pedidos preparados.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
       </div>
     </div>
 
@@ -88,33 +224,480 @@
     <div id="catalogo" class="section">
       <h2>Catálogo de Productos</h2>
       <div class="row">
-        <div class="col-md-4">
-          <div class="card mb-3">
-            <div class="card-body">
-              <h5 class="card-title">Taladro Eléctrico</h5>
-              <p class="card-text">500W | Bosch | Stock: 12 unidades</p>
-              <button class="btn btn-outline-primary">Ver Detalles</button>
+        {% for producto in productos %}
+        <div class="col-md-4 mb-4">
+          <div class="card h-100">
+            <div class="card-body d-flex flex-column">
+              <div class="d-flex align-items-center mb-2">
+                {% if producto.imagen %}
+                  <img src="{{ producto.imagen.url }}" alt="{{ producto.nombre }}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; margin-right: 1rem;">
+                {% else %}
+                  <div class="bg-light d-flex align-items-center justify-content-center" style="width: 60px; height: 60px; border-radius: 8px; margin-right: 1rem;">
+                    <i class="bi bi-tools" style="font-size: 2rem; color: #6c757d;"></i>
+                  </div>
+                {% endif %}
+                <div>
+                  <h5 class="card-title mb-0">{{ producto.nombre }}</h5>
+                  <small class="text-muted">{{ producto.categoria.nombre }}</small>
+                </div>
+              </div>
+              <p class="mb-2">Stock actual: <span id="stock-{{ producto.id }}">{{ producto.stock }}</span> unidades</p>
+              <div class="input-group mb-2" style="max-width: 180px;">
+                <button class="btn btn-outline-secondary" type="button" onclick="cambiarCantidad({{ producto.id }}, -1)">-</button>
+                <input type="number" class="form-control text-center" id="input-stock-{{ producto.id }}" value="{{ producto.stock }}" min="0" style="width: 60px;">
+                <button class="btn btn-outline-secondary" type="button" onclick="cambiarCantidad({{ producto.id }}, 1)">+</button>
+              </div>
+              <button class="btn btn-primary mt-auto" onclick="actualizarStock({{ producto.id }})">
+                <i class="bi bi-save me-1"></i>Actualizar stock
+              </button>
+              <div id="feedback-{{ producto.id }}" class="mt-2"></div>
             </div>
           </div>
         </div>
-        <div class="col-md-4">
-          <div class="card mb-3">
-            <div class="card-body">
-              <h5 class="card-title">Martillo Clásico</h5>
-              <p class="card-text">Acero | Mango madera | Stock: 35 unidades</p>
-              <button class="btn btn-outline-primary">Ver Detalles</button>
-            </div>
-          </div>
+        {% empty %}
+        <div class="col-12">
+          <div class="alert alert-info text-center">No hay productos para mostrar.</div>
         </div>
-        <!-- Agrega más productos si lo deseas -->
+        {% endfor %}
       </div>
     </div>
   </div>
 
+  <!-- Modal para ver detalles -->
+  <div class="modal fade" id="modalDetalle" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Detalle del Pedido</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div id="detalleContenido">
+            <!-- El contenido se cargará dinámicamente -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para preparar productos -->
+  <div class="modal fade" id="modalPreparar" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Preparar Productos</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div id="prepararContenido" class="row"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-success" onclick="finalizarPreparacion()">Finalizar Preparación</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CSRF Token -->
+  {% csrf_token %}
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- SweetAlert2 CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  
   <script>
     function showSection(id) {
       document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
       document.getElementById(id).classList.add('active');
+    }
+
+    // Función para ver el detalle de un pedido
+    function verDetalle(ventaId) {
+      fetch(`/obtener-detalle-pedido/${ventaId}/`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            const venta = data.venta;
+            let html = `
+              <div class="mb-3">
+                <h6>Información del Cliente</h6>
+                <p><strong>Cliente:</strong> ${venta.cliente}</p>
+                <p><strong>Dirección:</strong> ${venta.direccion_entrega}</p>
+                <p><strong>Ciudad:</strong> ${venta.ciudad}</p>
+                <p><strong>Teléfono:</strong> ${venta.telefono_contacto}</p>
+              </div>
+              <div class="mb-3">
+                <h6>Información de la Venta</h6>
+                <p><strong>Estado actual:</strong> ${venta.estado}</p>
+                <p><strong>Fecha de venta:</strong> ${venta.fecha}</p>
+                ${venta.aceptada_por ? `<p><strong>Aceptada por:</strong> ${venta.aceptada_por} (${venta.fecha_aceptacion || ''})</p>` : ''}
+                ${venta.fecha_preparacion ? `<p><strong>Fecha de preparación:</strong> ${venta.fecha_preparacion}</p>` : ''}
+                <p><strong>Notas:</strong> ${venta.notas || 'Sin notas'}</p>
+              </div>
+              <div class="mb-3">
+                <h6>Productos</h6>
+                <table class="table table-sm">
+                  <thead>
+                    <tr>
+                      <th>Producto</th>
+                      <th>Cantidad</th>
+                      <th>Precio Unit.</th>
+                      <th>Subtotal</th>
+                      <th>Estado</th>
+                      <th>Preparado por</th>
+                      <th>Fecha preparación</th>
+                      <th>Notas</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+            `;
+            
+            venta.detalles.forEach(detalle => {
+              html += `
+                <tr>
+                  <td>
+                    <img src="${detalle.producto.imagen_url || '/static/img/no-image.png'}" alt="${detalle.producto.nombre}" style="height:40px;width:40px;object-fit:contain;vertical-align:middle;margin-right:5px;">
+                    ${detalle.producto.nombre}
+                  </td>
+                  <td>${detalle.cantidad}</td>
+                  <td>$${detalle.precio_unitario}</td>
+                  <td>$${detalle.subtotal}</td>
+                  <td>
+                    ${detalle.preparado ? '<span class="badge bg-success">Preparado</span>' : '<span class="badge bg-warning">Pendiente</span>'}
+                  </td>
+                  <td>${detalle.preparado_por || '-'}</td>
+                  <td>${detalle.fecha_preparacion || '-'}</td>
+                  <td>${detalle.notas_preparacion || '-'}</td>
+                </tr>
+              `;
+            });
+            
+            html += `
+                  </tbody>
+                </table>
+              </div>
+              <div class="mb-3">
+                <h6>Información Adicional</h6>
+                <p><strong>Total:</strong> $${venta.total}</p>
+              </div>
+            `;
+            
+            document.getElementById('detalleContenido').innerHTML = html;
+            new bootstrap.Modal(document.getElementById('modalDetalle')).show();
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('Error al cargar el detalle del pedido');
+        });
+    }
+
+    // Función para preparar un pedido
+    function prepararPedido(ventaId) {
+      window.ventaIdPreparar = ventaId;
+      fetch(`/obtener-detalle-pedido/${ventaId}/`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            const detalles = data.venta.detalles;
+            let html = '';
+            detalles.forEach((detalle, idx) => {
+              html += `
+                <div class="col-md-4 mb-3">
+                  <div class="card producto-preparar" data-idx="${idx}" data-preparado="${detalle.preparado}">
+                    <img src="${detalle.producto.imagen_url || '/static/img/no-image.png'}" class="card-img-top img-fluid img-preparar" alt="${detalle.producto.nombre}" style="height: 180px; object-fit: contain; cursor:pointer; border: 3px solid ${detalle.preparado ? '#28a745' : '#ccc'};" data-producto-id="${detalle.producto.id}">
+                    <div class="card-body text-center">
+                      <h6 class="card-title mb-1">${detalle.producto.nombre}</h6>
+                      <span class="badge ${detalle.preparado ? 'bg-success' : 'bg-warning'} estado-preparado">${detalle.preparado ? 'Preparado' : 'Pendiente'}</span>
+                    </div>
+                  </div>
+                </div>
+              `;
+            });
+            document.getElementById('prepararContenido').innerHTML = html;
+            // Agregar eventos para marcar como preparado
+            document.querySelectorAll('.img-preparar').forEach(img => {
+              img.addEventListener('click', function() {
+                const card = this.closest('.producto-preparar');
+                const badge = card.querySelector('.estado-preparado');
+                const preparado = card.getAttribute('data-preparado') === 'true';
+                if (preparado) {
+                  card.setAttribute('data-preparado', 'false');
+                  this.style.border = '3px solid #ccc';
+                  badge.classList.remove('bg-success');
+                  badge.classList.add('bg-warning');
+                  badge.textContent = 'Pendiente';
+                } else {
+                  card.setAttribute('data-preparado', 'true');
+                  this.style.border = '3px solid #28a745';
+                  badge.classList.remove('bg-warning');
+                  badge.classList.add('bg-success');
+                  badge.textContent = 'Preparado';
+                }
+              });
+            });
+            new bootstrap.Modal(document.getElementById('modalPreparar')).show();
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('Error al cargar los productos para preparar');
+        });
+    }
+
+    // Función para finalizar la preparación (puedes personalizarla para enviar el estado al backend)
+    function finalizarPreparacion() {
+      const productos = [];
+      const ventaId = document.querySelector('.producto-preparar')?.closest('.modal').getAttribute('data-venta-id') || window.ventaIdPreparar;
+      document.querySelectorAll('.producto-preparar').forEach(card => {
+        if (card.getAttribute('data-preparado') === 'true') {
+          productos.push(parseInt(card.querySelector('img').getAttribute('data-producto-id')));
+        }
+      });
+      fetch(`/api/marcar-productos-preparados/${ventaId}/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({ preparados: productos })
+      })
+      .then(response => response.json())
+      .then(data => {
+        console.log(data); // Para depuración
+        if (data.success) {
+          Swal.fire({
+            title: 'Preparación finalizada',
+            text: 'El estado de los productos ha sido actualizado.',
+            icon: 'success',
+            confirmButtonText: 'OK'
+          });
+          // Cierra el modal
+          const modal = bootstrap.Modal.getInstance(document.getElementById('modalPreparar'));
+          if (modal) modal.hide();
+          try {
+            // Actualizar la barra de progreso en la tabla
+            const total = document.querySelectorAll('.producto-preparar').length;
+            const preparados = productos.length;
+            const porcentaje = total > 0 ? Math.round((preparados / total) * 100) : 0;
+            let fila = null;
+            document.querySelectorAll('tbody tr').forEach(tr => {
+              if (tr.querySelector('td') && tr.querySelector('td').textContent.trim() === `#${ventaId}`) {
+                fila = tr;
+              }
+            });
+            if (fila) {
+              const barra = fila.querySelector('.progress-bar');
+              barra.style.width = porcentaje + '%';
+              barra.textContent = `${preparados}/${total}`;
+              barra.classList.remove('bg-info', 'bg-success');
+              if (porcentaje === 100) {
+                barra.classList.add('bg-success');
+              } else {
+                barra.classList.add('bg-info');
+              }
+            }
+          } catch (e) {
+            console.error('Error actualizando la barra:', e);
+          }
+        } else {
+          Swal.fire('Error', data.error || 'No se pudo actualizar el estado.', 'error');
+        }
+      })
+      .catch(() => {
+        Swal.fire('Error', 'No se pudo actualizar el estado.', 'error');
+      });
+    }
+
+    // Función para entregar un pedido
+    function entregarPedido(ventaId) {
+      if (confirm('¿Estás seguro de que deseas marcar este pedido como entregado?')) {
+        fetch(`/actualizar-estado-pedido/${ventaId}/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+          },
+          body: JSON.stringify({
+            estado: 'entregada'
+          })
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            location.reload();
+          } else {
+            alert('Error al actualizar el estado del pedido');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('Error al actualizar el estado del pedido');
+        });
+      }
+    }
+
+    // Función auxiliar para obtener el token CSRF
+    function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i].trim();
+          if (cookie.substring(0, name.length + 1) === (name + '=')) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
+    }
+
+    // Filtros
+    document.getElementById('filtroEstado').addEventListener('change', filtrarTabla);
+    document.getElementById('filtroPrioridad').addEventListener('change', filtrarTabla);
+    document.getElementById('busqueda').addEventListener('input', filtrarTabla);
+
+    function filtrarTabla() {
+      const estado = document.getElementById('filtroEstado').value.toLowerCase();
+      const prioridad = document.getElementById('filtroPrioridad').value.toLowerCase();
+      const busqueda = document.getElementById('busqueda').value.toLowerCase();
+      
+      const filas = document.querySelectorAll('tbody tr');
+      
+      filas.forEach(fila => {
+        const textoFila = fila.textContent.toLowerCase();
+        const estadoFila = fila.querySelector('td:nth-child(5)').textContent.toLowerCase();
+        const prioridadFila = fila.querySelector('td:nth-child(6)').textContent.toLowerCase();
+        
+        const coincideEstado = !estado || estadoFila.includes(estado);
+        const coincidePrioridad = !prioridad || prioridadFila.includes(prioridad);
+        const coincideBusqueda = !busqueda || textoFila.includes(busqueda);
+        
+        fila.style.display = coincideEstado && coincidePrioridad && coincideBusqueda ? '' : 'none';
+      });
+    }
+
+    function confirmarLogout() {
+      Swal.fire({
+        title: '¿Cerrar Sesión?',
+        text: '¿Estás seguro de que deseas cerrar sesión?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, cerrar sesión',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          // Redirigir al logout
+          window.location.href = '/logout/';
+        }
+      });
+    }
+
+    // Cambiar cantidad con + y -
+    function cambiarCantidad(productoId, delta) {
+      const input = document.getElementById('input-stock-' + productoId);
+      let valor = parseInt(input.value) || 0;
+      valor += delta;
+      if (valor < 0) valor = 0;
+      input.value = valor;
+    }
+
+    // Actualizar stock vía AJAX
+    function actualizarStock(productoId) {
+      const input = document.getElementById('input-stock-' + productoId);
+      const nuevoStock = parseInt(input.value);
+      if (isNaN(nuevoStock) || nuevoStock < 0) {
+        Swal.fire({
+          title: 'Error',
+          text: 'El stock debe ser un número válido mayor o igual a 0',
+          icon: 'error'
+        });
+        return;
+      }
+      fetch(`/api/actualizar-stock/${productoId}/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({ stock: nuevoStock })
+      })
+      .then(response => response.json())
+      .then(data => {
+        const feedback = document.getElementById('feedback-' + productoId);
+        if (data.success) {
+          document.getElementById('stock-' + productoId).textContent = nuevoStock;
+          feedback.innerHTML = '<span class="badge bg-success">Stock actualizado</span>';
+          Swal.fire({
+            title: '¡Éxito!',
+            text: 'Stock actualizado correctamente',
+            icon: 'success',
+            timer: 1200,
+            showConfirmButton: false
+          });
+        } else {
+          feedback.innerHTML = '<span class="badge bg-danger">' + (data.error || 'Error al actualizar') + '</span>';
+          Swal.fire({
+            title: 'Error',
+            text: data.error || 'No se pudo actualizar el stock',
+            icon: 'error'
+          });
+        }
+      })
+      .catch(() => {
+        Swal.fire({
+          title: 'Error',
+          text: 'No se pudo actualizar el stock',
+          icon: 'error'
+        });
+      });
+    }
+
+    // Confirmar y marcar como entregado
+    function confirmarEntregado(ventaId) {
+      Swal.fire({
+        title: '¿Marcar como preparado?',
+        text: '¿Estás seguro de que deseas marcar este pedido como preparado? Pasará a la sección de Órdenes preparadas.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, preparar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#28a745',
+        cancelButtonColor: '#6c757d'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          fetch(`/api/marcar-entregado/${ventaId}/`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': getCookie('csrftoken')
+            }
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              Swal.fire({
+                title: '¡Preparada!',
+                text: 'El pedido ha sido marcado como preparado.',
+                icon: 'success',
+                timer: 1200,
+                showConfirmButton: false
+              });
+              // Eliminar la fila de la tabla de órdenes
+              const fila = document.getElementById('orden-' + ventaId);
+              if (fila) fila.remove();
+            } else {
+              Swal.fire('Error', data.error || 'No se pudo marcar como preparado', 'error');
+            }
+          })
+          .catch(() => {
+            Swal.fire('Error', 'No se pudo marcar como preparado', 'error');
+          });
+        }
+      });
     }
   </script>
 

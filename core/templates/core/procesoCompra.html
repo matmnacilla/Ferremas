@@ -1,140 +1,428 @@
+{% load core_extras %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Proceso de Pago - Ferremas</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proceso de Pago - Ferremas</title>
+    <!-- CSS de Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 </head>
 <body style="background-color: #f4f4f4;">
 
-  <!-- Header -->
-  <nav class="navbar navbar-dark bg-danger">
-    <div class="container">
-      <a class="navbar-brand" href="#">
-        <img src="ruta/a/logo.png" alt="Ferremas" style="width: 40px;" class="me-2"> Ferremas
-      </a>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-danger">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'index' %}">
+                <i class="bi bi-tools me-2"></i>
+                Ferremas
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'index' %}">
+                            <i class="bi bi-house-door me-1"></i>Inicio
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'catalogo' %}">
+                            <i class="bi bi-grid me-1"></i>Catálogo
+                        </a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    {% if user.is_authenticated %}
+                        <li class="nav-item me-3">
+                            <a class="nav-link" href="{% url 'carrito' %}">
+                                <i class="bi bi-cart3 fs-5"></i>Carrito
+                            </a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                                <i class="bi bi-person-circle me-1"></i>{{ user.username }}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                {% if user.is_staff %}
+                                    <li><a class="dropdown-item" href="{% url 'panelAdmin' %}">
+                                        <i class="bi bi-gear me-2"></i>Panel Admin
+                                    </a></li>
+                                {% endif %}
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{% url 'logout' %}">
+                                    <i class="bi bi-box-arrow-right me-2"></i>Cerrar sesión
+                                </a></li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'login' %}">
+                                <i class="bi bi-box-arrow-in-right me-1"></i>Iniciar sesión
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'registrarse' %}">
+                                <i class="bi bi-person-plus me-1"></i>Registrarse
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Mensajes -->
+    {% if messages %}
+    <div class="container mt-3">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
     </div>
-  </nav>
+    {% endif %}
 
-  <!-- Contenido -->
-  <div class="container my-5">
-    <h2 class="mb-4 text-center">Finalizar Compra</h2>
-
-    <form id="paymentForm" class="bg-white p-4 rounded shadow">
-      <h5 class="mb-3">Información del Cliente</h5>
-      <div class="row mb-3">
-        <div class="col-md-6">
-          <label for="nombre" class="form-label">Nombre completo</label>
-          <input type="text" class="form-control" id="nombre" required>
-        </div>
-        <div class="col-md-6">
-          <label for="correo" class="form-label">Correo electrónico</label>
-          <input type="email" class="form-control" id="correo" required>
-        </div>
-      </div>
-      <h5 class="mb-3">Opciones de Entrega</h5>
-      <div class="mb-3">
-        <select class="form-select" id="opcionEntrega" required>
-          <option value="">Selecciona una opción de entrega</option>
-          <option value="domicilio">Entrega a Domicilio</option>
-          <option value="retiro">Retiro en Tienda</option>
-        </select>
-      </div>
-      <div class="mb-3">
-        <label for="direccion" class="form-label">Dirección de entrega</label>
-        <input type="text" class="form-control" id="direccion" required>
-      </div>
-
-      <hr>
-
-      <h5 class="mb-3">Resumen del Pedido</h5>
-      <ul class="list-group mb-3">
-        <li class="list-group-item d-flex justify-content-between">
-          <span>Taladro Industrial 1200W</span>
-          <strong>$120.000</strong>
-        </li>
-        <li class="list-group-item d-flex justify-content-between">
-          <span>Set de Destornilladores</span>
-          <strong>$35.000</strong>
-        </li>
-        <li class="list-group-item d-flex justify-content-between">
-          <span>Envio</span>
-          <strong>$4.000</strong>
-        </li>
-        <li class="list-group-item d-flex justify-content-between">
-          <span>Total</span>
-          <strong>$159.000</strong>
-        </li>
-      </ul>
-
-      <hr>
-
-      <h5 class="mb-3">Método de Pago</h5>
-      <div class="mb-3">
-        <select class="form-select" id="metodoPago" onchange="mostrarCamposPago()" required>
-          <option value="">Selecciona un método</option>
-          <option value="tarjeta">Tarjeta de Crédito/Débito</option>
-          <option value="transferencia">Transferencia Bancaria</option>
-          <option value="condespacho">Pago con Despacho</option>
-        </select>
-      </div>
-
-    
-
-      <!-- Datos para Tarjeta -->
-      <div id="pagoTarjeta" style="display: none;">
-        <div class="mb-3">
-          <label for="numeroTarjeta" class="form-label">Número de Tarjeta</label>
-          <input type="text" class="form-control" id="numeroTarjeta" maxlength="16">
-        </div>
+    <!-- Contenido principal -->
+    <main class="container py-4">
         <div class="row">
-          <div class="col-md-6 mb-3">
-            <label for="fechaExp" class="form-label">Fecha de Expiración</label>
-            <input type="month" class="form-control" id="fechaExp">
-          </div>
-          <div class="col-md-6 mb-3">
-            <label for="cvv" class="form-label">CVV</label>
-            <input type="text" class="form-control" id="cvv" maxlength="3">
-          </div>
+            <!-- Resumen del Pedido -->
+            <div class="col-md-8">
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="card-title mb-0">Resumen del Pedido</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Producto</th>
+                                        <th>Cantidad</th>
+                                        <th>Precio Unit.</th>
+                                        <th>Subtotal</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in carrito %}
+                                    <tr>
+                                        <td>{{ item.producto.nombre }}</td>
+                                        <td>{{ item.cantidad }}</td>
+                                        <td>${{ item.producto.precio|floatformat:0 }}</td>
+                                        <td>${{ item.subtotal|floatformat:0 }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="3" class="text-end"><strong>Total:</strong></td>
+                                        <td><strong>${{ total|floatformat:0 }}</strong></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información de Entrega -->
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="card-title mb-0">Información de Entrega</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="formEntrega" class="needs-validation" novalidate>
+                            <div class="mb-3">
+                                <label for="direccion" class="form-label">Dirección de Entrega</label>
+                                <input type="text" class="form-control" id="direccion" name="direccion" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="telefono" class="form-label">Teléfono de Contacto</label>
+                                <input type="tel" class="form-control" id="telefono" name="telefono" required>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="comuna" class="form-label">Comuna</label>
+                                    <input type="text" class="form-control" id="comuna" name="comuna" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="ciudad" class="form-label">Ciudad</label>
+                                    <input type="text" class="form-control" id="ciudad" name="ciudad" required>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="instrucciones" class="form-label">Instrucciones adicionales (opcional)</label>
+                                <textarea class="form-control" id="instrucciones" name="instrucciones" rows="2"></textarea>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel de Pago -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="card-title mb-0">Pago</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="paypal-button-container"></div>
+                        <div class="alert alert-info mt-3">
+                            <i class="bi bi-info-circle me-2"></i>
+                            El pago se procesará en USD. El monto a pagar es aproximadamente ${{ total|multiply:0.001|floatformat:2 }} USD.
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
+    </main>
 
-      <!-- Datos para Transferencia -->
-      <div id="pagoTransferencia" style="display: none;">
-        <p class="text-muted">Realiza tu pago a la siguiente cuenta:</p>
-        <ul>
-          <li><strong>Banco:</strong> Banco de Ferremas</li>
-          <li><strong>Cuenta:</strong> 1234567890</li>
-          <li><strong>RUT:</strong> 0987654321</li>
-        </ul>
-        <div class="mb-3">
-          <label for="comprobante" class="form-label">Sube tu comprobante de transferencia</label>
-          <input type="file" class="form-control" id="comprobante">
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4">
+                    <h5>Ferremas</h5>
+                    <p class="mb-0">Tu ferretería de confianza</p>
+                </div>
+                <div class="col-md-4">
+                    <h5>Contacto</h5>
+                    <p class="mb-0">
+                        <i class="bi bi-telephone me-2"></i>+56 9 1234 5678<br>
+                        <i class="bi bi-envelope me-2"></i>contacto@ferremas.cl
+                    </p>
+                </div>
+                <div class="col-md-4">
+                    <h5>Síguenos</h5>
+                    <div class="social-links">
+                        <a href="#" class="text-white me-2"><i class="bi bi-facebook"></i></a>
+                        <a href="#" class="text-white me-2"><i class="bi bi-instagram"></i></a>
+                        <a href="#" class="text-white"><i class="bi bi-whatsapp"></i></a>
+                    </div>
+                </div>
+            </div>
+            <hr class="my-4">
+            <p class="mb-0 text-center">&copy; 2025 Ferremas. Todos los derechos reservados.</p>
         </div>
-      </div>
+    </footer>
 
-      <!-- Info Contraentrega -->
-      <div id="pagoContraentrega" style="display: none;">
-        <p class="text-muted">Pagarás el monto total al momento de recibir tu pedido.</p>
-      </div>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- SweetAlert2 CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- PayPal SDK -->
+    <script src="https://www.paypal.com/sdk/js?client-id={{ PAYPAL_CLIENT_ID }}&currency=USD"></script>
+    <script>
+        // Configuración de PayPal
+        const PAYPAL_CONFIG = {
+            MINIMUM_AMOUNT: parseFloat('{{ PAYPAL_MINIMUM_AMOUNT|stringformat:"f" }}'),
+            CURRENCY: '{{ PAYPAL_CURRENCY }}'
+        };
 
-      <button type="submit" class="btn btn-danger w-100 mt-4">Confirmar y Pagar</button>
-    </form>
-  </div>
+        // Función para verificar si los popups están bloqueados
+        function verificarPopupsBloqueados() {
+            const popup = window.open('about:blank', '_blank', 'width=1,height=1');
+            if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+                mostrarError('Los popups están bloqueados en tu navegador. Por favor, permite los popups para esta página y recarga.');
+                return false;
+            }
+            popup.close();
+            return true;
+        }
 
-  <footer class="bg-dark text-white text-center py-3 mt-5">
-    <p class="mb-0">&copy; 2025 Ferremas. Todos los derechos reservados.</p>
-  </footer>
+        // Validación del formulario de entrega
+        function validarFormularioEntrega() {
+            const form = document.getElementById('formEntrega');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return false;
+            }
+            return true;
+        }
 
-  <script>
-    function mostrarCamposPago() {
-      const metodo = document.getElementById("metodoPago").value;
-      document.getElementById("pagoTarjeta").style.display = metodo === "tarjeta" ? "block" : "none";
-      document.getElementById("pagoTransferencia").style.display = metodo === "transferencia" ? "block" : "none";
-      document.getElementById("pagoContraentrega").style.display = metodo === "condespacho" ? "block" : "none";
-    }
-  </script>
+        // Función para mostrar errores
+        function mostrarError(mensaje) {
+            Swal.fire({
+                title: 'Error',
+                text: mensaje,
+                icon: 'error',
+                confirmButtonText: 'Entendido'
+            });
+        }
+
+        // Función para mostrar instrucciones de PayPal
+        function mostrarInstruccionesPayPal() {
+            Swal.fire({
+                title: 'Instrucciones para PayPal',
+                html: `
+                    <div class="text-start">
+                        <ol class="mb-0">
+                            <li>Asegúrate de que los popups estén permitidos en tu navegador</li>
+                            <li>Completa el formulario de entrega</li>
+                            <li>Haz clic en el botón de PayPal</li>
+                            <li>Inicia sesión en tu cuenta de PayPal</li>
+                            <li>Confirma el pago</li>
+                        </ol>
+                    </div>
+                `,
+                icon: 'info',
+                confirmButtonText: 'Entendido'
+            });
+        }
+
+        // Función para inicializar PayPal
+        function inicializarPayPal() {
+            if (!verificarPopupsBloqueados()) {
+                mostrarError('Los popups están bloqueados. Por favor, permite los popups y recarga la página.');
+                return;
+            }
+
+            paypal.Buttons({
+                createOrder: function(data, actions) {
+                    console.log('Iniciando creación de orden...');
+                    
+                    if (!validarFormularioEntrega()) {
+                        console.log('Formulario de entrega inválido');
+                        return Promise.reject(new Error('Por favor, completa el formulario de entrega'));
+                    }
+
+                    // Verificar popups nuevamente antes de crear la orden
+                    if (!verificarPopupsBloqueados()) {
+                        return Promise.reject(new Error('Los popups están bloqueados. Por favor, permite los popups y recarga la página.'));
+                    }
+
+                    console.log('Enviando petición al servidor...');
+                    return fetch("{% url 'paypal_create' %}", {
+                        method: 'post',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        },
+                        body: JSON.stringify({})
+                    })
+                    .then(function(res) {
+                        if (!res.ok) {
+                            throw new Error('Error en la respuesta del servidor');
+                        }
+                        return res.json();
+                    })
+                    .then(function(data) {
+                        console.log('Respuesta del servidor:', data);
+                        
+                        if (!data.success) {
+                            throw new Error(data.error || 'No se pudo crear la orden de pago');
+                        }
+
+                        // Validar monto mínimo
+                        const total_usd = parseFloat(data.total_usd);
+                        console.log('Total USD:', total_usd, 'Mínimo:', PAYPAL_CONFIG.MINIMUM_AMOUNT);
+                        
+                        if (total_usd < PAYPAL_CONFIG.MINIMUM_AMOUNT) {
+                            throw new Error(`El monto mínimo para pagos es $${PAYPAL_CONFIG.MINIMUM_AMOUNT} USD`);
+                        }
+
+                        // Crear la orden de PayPal
+                        console.log('Creando orden en PayPal...');
+                        return actions.order.create({
+                            purchase_units: [{
+                                amount: {
+                                    currency_code: PAYPAL_CONFIG.CURRENCY,
+                                    value: data.total_usd,
+                                    breakdown: data.amount_breakdown
+                                },
+                                items: data.items
+                            }]
+                        }).then(function(orderId) {
+                            console.log('Orden creada con ID:', orderId);
+                            // Guardar el ID de la orden en la sesión
+                            const form = document.getElementById('formEntrega');
+                            const formData = new FormData(form);
+                            const formDataObj = {};
+                            formData.forEach((value, key) => formDataObj[key] = value);
+                            return fetch("{% url 'guardar_info_entrega' %}", {
+                                method: 'post',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRFToken': '{{ csrf_token }}'
+                                },
+                                body: JSON.stringify({
+                                    payment_id: orderId,
+                                    form_data: formDataObj
+                                })
+                            }).then(function() {
+                                return orderId;
+                            });
+                        });
+                    })
+                    .catch(function(error) {
+                        console.error('Error al crear orden:', error);
+                        mostrarError(error.message || 'Error al crear la orden de pago');
+                        return Promise.reject(error);
+                    });
+                },
+                onApprove: function(data, actions) {
+                    console.log('Orden aprobada:', data);
+                    return actions.order.capture()
+                        .then(function(details) {
+                            console.log('Detalles de la captura:', details);
+                            // Ya no es necesario volver a guardar la info de entrega aquí
+                            // Solo ejecutar el pago
+                            return fetch("{% url 'paypal_execute' %}", {
+                                method: 'post',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRFToken': '{{ csrf_token }}'
+                                },
+                                body: JSON.stringify({
+                                    order_id: data.orderID,
+                                    payer_id: details.payer.payer_id,
+                                    status: details.status
+                                })
+                            })
+                            .then(function(res) {
+                                return res.json().then(function(data) {
+                                    if (data.redirect_url) {
+                                        window.location.href = data.redirect_url;
+                                        return;
+                                    }
+                                    if (!data.success) {
+                                        throw new Error(data.error || 'Error al procesar el pago');
+                                    }
+                                    return data;
+                                });
+                            });
+                        })
+                        .catch(function(error) {
+                            console.error('Error en el proceso de pago:', error);
+                            mostrarError(error.message || 'Error al procesar el pago');
+                            return Promise.reject(error);
+                        });
+                },
+                onError: function (err) {
+                    console.error('Error en PayPal:', err);
+                    mostrarError('Error en el proceso de pago: ' + (err.message || 'Error desconocido'));
+                },
+                onCancel: function() {
+                    console.log('Pago cancelado por el usuario');
+                    mostrarError('Has cancelado el proceso de pago');
+                }
+            }).render('#paypal-button-container')
+            .catch(function(error) {
+                console.error('Error al renderizar el botón:', error);
+                mostrarError('Error al cargar el botón de PayPal. Por favor, recarga la página.');
+            });
+        }
+
+        // Inicializar la página
+        document.addEventListener('DOMContentLoaded', function() {
+            mostrarInstruccionesPayPal();
+            inicializarPayPal();
+        });
+    </script>
 
 </body>
 </html>

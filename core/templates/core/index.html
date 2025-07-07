@@ -1,252 +1,569 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Ferremas - Tu tienda de ferretería</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <style>
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Inicio - Ferremas{% endblock %}
+
+{% block extra_css %}
+<style>
     /* Estilos para el carrusel */
+    .carousel {
+        width: 100%;
+        margin: 0;
+        padding: 0;
+    }
+
+    .carousel-inner {
+        width: 100%;
+    }
+
     .carousel-item {
-      height: 400px;
-      background-size: cover;
-      background-position: center;
+        height: 500px;
+        width: 100%;
     }
 
-    .carousel-item .container {
-      position: relative;
-      z-index: 2;
+    .carousel-content {
+        position: relative;
+        z-index: 2;
+        color: white;
+        text-align: center;
+        padding: 2rem;
     }
 
-    .carousel-item::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.3);
-      z-index: 1;
+    .carousel-content h1,
+    .carousel-content h2 {
+        font-size: 3rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
     }
 
-    .carousel-item .display-4 {
-      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    .carousel-content p {
+        font-size: 1.25rem;
+        margin-bottom: 2rem;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
     }
 
-    .carousel-item .lead {
-      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+    .carousel-content .btn {
+        padding: 0.75rem 2rem;
+        font-size: 1.1rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        transition: all 0.3s ease;
+    }
+
+    .carousel-content .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .carousel-indicators {
+        margin-bottom: 2rem;
+    }
+
+    .carousel-indicators button {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin: 0 8px;
+        background-color: rgba(255, 255, 255, 0.5);
+        border: 2px solid white;
+    }
+
+    .carousel-indicators button.active {
+        background-color: white;
+        transform: scale(1.2);
     }
 
     .carousel-control-prev,
     .carousel-control-next {
-      width: 5%;
+        width: 5%;
+        opacity: 0.8;
     }
 
-    .carousel-indicators {
-      margin-bottom: 1rem;
+    .carousel-control-prev:hover,
+    .carousel-control-next:hover {
+        opacity: 1;
     }
 
-    .carousel-indicators button {
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      margin: 0 5px;
+    /* Colores de fondo para cada slide - Rojos fuertes y amarillos */
+    .slide-1 {
+        background: linear-gradient(135deg, #dc3545, #c82333);
+    }
+
+    .slide-2 {
+        background: linear-gradient(135deg, #ffc107, #ff8c00);
+    }
+
+    .slide-3 {
+        background: linear-gradient(135deg, #d63031, #b71540);
+    }
+
+    .slide-4 {
+        background: linear-gradient(135deg, #ffeb3b, #ff9800);
     }
 
     /* Responsive */
     @media (max-width: 768px) {
-      .carousel-item {
-        height: 300px;
-      }
+        .carousel-item {
+            height: 400px;
+        }
 
-      .carousel-item .display-4 {
-        font-size: 2rem;
-      }
+        .carousel-content h1,
+        .carousel-content h2 {
+            font-size: 2rem;
+        }
 
-      .carousel-item .lead {
-        font-size: 1rem;
-      }
+        .carousel-content p {
+            font-size: 1rem;
+        }
+        
+        /* En móviles, ocultar imagen del producto en oferta */
+        .carousel-item .col-md-6:last-child {
+            display: none;
+        }
+        
+        .carousel-content {
+            text-align: center !important;
+        }
     }
-  </style>
-</head>
-<body style="background-color: #F5F5F5;">
+    
+    /* Estilos para productos en oferta */
+    .carousel-item .badge {
+        font-size: 1.2rem !important;
+        padding: 0.5rem 1rem;
+    }
+    
+    .carousel-item img {
+        transition: transform 0.3s ease;
+    }
+    
+    .carousel-item img:hover {
+        transform: scale(1.05);
+    }
+    
+    /* Estilos para categoría aleatoria */
+    .carousel-item .badge.bg-info {
+        font-size: 0.9rem !important;
+        padding: 0.4rem 0.8rem;
+        animation: pulse 2s infinite;
+        background-color: rgba(255, 255, 255, 0.9) !important;
+        color: #333 !important;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        font-weight: 600;
+    }
+    
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.7; }
+        100% { opacity: 1; }
+    }
+    
+    .carousel-item .text-light i {
+        margin-right: 0.5rem;
+    }
+    
+    /* Mejoras para el centrado */
+    .carousel-content.text-center {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    
+    .carousel-content.text-center h2 {
+        font-size: 3.5rem;
+        font-weight: 700;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    }
+    
+    .carousel-content.text-center .lead {
+        font-size: 1.3rem;
+        line-height: 1.6;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+    }
+    
+    .carousel-content.text-center .btn {
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        transition: all 0.3s ease;
+        background-color: rgba(255, 255, 255, 0.95);
+        border: 2px solid rgba(255, 255, 255, 0.8);
+        color: #333;
+    }
+    
+    .carousel-content.text-center .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        background-color: white;
+        border-color: white;
+        color: #333;
+    }
+    
+    /* Mejoras para fondos rojos y amarillos */
+    .carousel-item {
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .carousel-item::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: radial-gradient(circle at 30% 70%, rgba(255, 255, 255, 0.15) 0%, transparent 50%);
+        pointer-events: none;
+    }
+    
+    /* Efecto adicional para slides amarillos */
+    .slide-2::after,
+    .slide-4::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: radial-gradient(circle at 70% 30%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+        pointer-events: none;
+    }
 
-  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <div class="container">
-      <a class="navbar-brand" href="#">
-        <i class="bi bi-tools me-2"></i>
-        Ferremas
-      </a>
-      {% if user.is_authenticated %}
-      <!-- Usuario autenticado -->
-      <span class="navbar-text text-light">
-        Bienvenido, {{ user.username }}
-      </span>
-      {% endif %}
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      
-      <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav ms-auto">
-          <li class="nav-item"><a class="nav-link active" href="#">Inicio</a></li>
-          <li class="nav-item"><a class="nav-link" href="{% url 'catalogo' %}">Productos</a></li>
-      
-          {% if not user.is_authenticated %}  
-           <!-- Usuario no autenticado -->
-           <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Iniciar sesión</a></li>
-           <li class="nav-item"><a class="nav-link" href="{% url 'registrarse' %}">Registrarse</a></li>
-          {% else %}
-          <!-- Usuario autenticado -->
-          <li class="nav-item">
-            <a class="nav-link" href="{% url 'logout' %}">Cerrar sesión</a>
-          </li>
-          {% endif %}
-        </ul>
-      </div>
-    </div>
-  </nav>
+    /* Ajuste para el contenedor dentro del carrusel */
+    .carousel .container {
+        max-width: 100%;
+        padding: 0 2rem;
+    }
 
-  <!-- Carrusel -->
-  <div id="carouselMain" class="carousel slide" data-bs-ride="carousel">
+    @media (min-width: 1200px) {
+        .carousel .container {
+            max-width: 1140px;
+            margin: 0 auto;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block full_width_content %}
+<!-- Carrusel -->
+<div id="carouselMain" class="carousel slide" data-bs-ride="carousel">
     <!-- Indicadores -->
     <div class="carousel-indicators">
-      <button type="button" data-bs-target="#carouselMain" data-bs-slide-to="0" class="active"></button>
-      <button type="button" data-bs-target="#carouselMain" data-bs-slide-to="1"></button>
-      <button type="button" data-bs-target="#carouselMain" data-bs-slide-to="2"></button>
-      <button type="button" data-bs-target="#carouselMain" data-bs-slide-to="3"></button>
+        <button type="button" data-bs-target="#carouselMain" data-bs-slide-to="0" class="active"></button>
+        <button type="button" data-bs-target="#carouselMain" data-bs-slide-to="1"></button>
+        {% if productos_oferta %}
+            {% for producto in productos_oferta %}
+            <button type="button" data-bs-target="#carouselMain" data-bs-slide-to="{{ forloop.counter|add:1 }}"></button>
+            {% endfor %}
+        {% else %}
+            <button type="button" data-bs-target="#carouselMain" data-bs-slide-to="2"></button>
+        {% endif %}
+        <button type="button" data-bs-target="#carouselMain" data-bs-slide-to="{% if productos_oferta %}{{ productos_oferta|length|add:2 }}{% else %}3{% endif %}"></button>
     </div>
 
     <!-- Slides -->
     <div class="carousel-inner">
-      <!-- Slide 1: Bienvenida -->
-      <div class="carousel-item active">
-        <div class="bg-primary text-white py-5" style="height: 400px;">
-          <div class="container h-100 d-flex align-items-center">
-            <div class="row">
-              <div class="col-md-8">
-                <h1 class="display-4 fw-bold">Bienvenido a Ferremas</h1>
-                <p class="lead">Tu ferretería de confianza. Todo lo que necesitas para tus proyectos de construcción, hogar o industria.</p>
-                <a href="{% url 'catalogo' %}" class="btn btn-light btn-lg">Explora nuestros productos</a>
-              </div>
+        <!-- Slide 1: Bienvenida -->
+        <div class="carousel-item active slide-1">
+            <div class="container h-100 d-flex align-items-center">
+                <div class="carousel-content">
+                    <h1>Bienvenido a Ferremas</h1>
+                    <p class="lead">Tu ferretería de confianza. Todo lo que necesitas para tus proyectos de construcción, hogar o industria.</p>
+                    <a href="{% url 'catalogo' %}" class="btn btn-light btn-lg">Explora nuestros productos</a>
+                </div>
             </div>
-          </div>
         </div>
-      </div>
 
-      <!-- Slide 2: Herramientas -->
-      <div class="carousel-item">
-        <div class="bg-danger text-white py-5" style="height: 400px;">
-          <div class="container h-100 d-flex align-items-center">
-            <div class="row">
-              <div class="col-md-8">
-                <h2 class="display-4 fw-bold">Herramientas Profesionales</h2>
-                <p class="lead">Amplia selección de herramientas de las mejores marcas para profesionales y aficionados.</p>
-                <a href="{% url 'catalogo' %}" class="btn btn-light btn-lg">Ver herramientas</a>
-              </div>
+        <!-- Slide 2: Categoría Aleatoria -->
+        {% if categoria_herramientas %}
+            <div class="carousel-item slide-2">
+                <div class="container h-100 d-flex align-items-center justify-content-center">
+                    <div class="carousel-content text-center">
+                        <div class="mb-3">
+                            <span class="badge bg-info">¡Categoría Destacada!</span>
+                        </div>
+                        <h2 class="mb-3">{{ categoria_herramientas.nombre|title }}</h2>
+                        <p class="lead mb-4">Descubre nuestra amplia selección de {{ categoria_herramientas.nombre|lower }} de las mejores marcas.</p>
+                        {% if categoria_herramientas.num_productos %}
+                            <p class="text-light mb-4">
+                                <i class="bi bi-box-seam"></i> {{ categoria_herramientas.num_productos }} productos disponibles
+                            </p>
+                        {% endif %}
+                        <a href="{% url 'catalogo' %}?categoria={{ categoria_herramientas.nombre }}" class="btn btn-light btn-lg px-4">
+                            <i class="bi bi-arrow-right"></i> Ver {{ categoria_herramientas.nombre|lower }}
+                        </a>
+                    </div>
+                </div>
             </div>
-          </div>
-        </div>
-      </div>
+        {% else %}
+            <!-- Fallback si no hay categoría -->
+            <div class="carousel-item slide-2">
+                <div class="container h-100 d-flex align-items-center">
+                    <div class="carousel-content">
+                        <h2>Productos Destacados</h2>
+                        <p class="lead">Amplia selección de productos de las mejores marcas para profesionales y aficionados.</p>
+                        <a href="{% url 'catalogo' %}" class="btn btn-light btn-lg">Ver productos</a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
 
-      <!-- Slide 3: Materiales -->
-      <div class="carousel-item">
-        <div class="bg-success text-white py-5" style="height: 400px;">
-          <div class="container h-100 d-flex align-items-center">
-            <div class="row">
-              <div class="col-md-8">
-                <h2 class="display-4 fw-bold">Materiales de Construcción</h2>
-                <p class="lead">Todo tipo de materiales para tus proyectos de construcción y remodelación.</p>
-                <a href="{% url 'catalogo' %}" class="btn btn-light btn-lg">Ver materiales</a>
-              </div>
+        <!-- Slide 3: Producto en Oferta -->
+        {% if productos_oferta %}
+            {% for producto in productos_oferta %}
+            <div class="carousel-item slide-3">
+                <div class="container h-100 d-flex align-items-center">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <div class="carousel-content text-start">
+                                <h2>{{ producto.nombre }}</h2>
+                                <p class="lead">{{ producto.descripcion|truncatewords:15 }}</p>
+                                <div class="mb-3">
+                                    <span class="text-decoration-line-through text-light me-3">${{ producto.precio }}</span>
+                                    <span class="badge bg-danger fs-5">${{ producto.precio_oferta }}</span>
+                                </div>
+                                <a href="{% url 'detalle_producto' producto.id %}" class="btn btn-light btn-lg">Ver producto</a>
+                            </div>
+                        </div>
+                        <div class="col-md-6 text-center">
+                            {% if producto.imagen %}
+                                <img src="{{ producto.imagen.url }}" alt="{{ producto.nombre }}" class="img-fluid rounded shadow" style="max-height: 300px; object-fit: cover;">
+                            {% else %}
+                                <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 300px;">
+                                    <i class="bi bi-image text-muted" style="font-size: 4rem;"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
             </div>
-          </div>
-        </div>
-      </div>
+            {% endfor %}
+        {% else %}
+            <!-- Slide 3: Ofertas (fallback si no hay productos en oferta) -->
+            <div class="carousel-item slide-3">
+                <div class="container h-100 d-flex align-items-center">
+                    <div class="carousel-content">
+                        <h2>Ofertas Especiales</h2>
+                        <p class="lead">Aprovecha nuestras ofertas y descuentos en productos seleccionados.</p>
+                        <a href="{% url 'catalogo' %}?ofertas=true" class="btn btn-light btn-lg">Ver ofertas</a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
 
-      <!-- Slide 4: Ofertas -->
-      <div class="carousel-item">
-        <div class="bg-warning text-dark py-5" style="height: 400px;">
-          <div class="container h-100 d-flex align-items-center">
-            <div class="row">
-              <div class="col-md-8">
-                <h2 class="display-4 fw-bold">Ofertas Especiales</h2>
-                <p class="lead">Aprovecha nuestras ofertas y descuentos en productos seleccionados.</p>
-                <a href="{% url 'catalogo' %}?ofertas=true" class="btn btn-dark btn-lg">Ver ofertas</a>
-              </div>
+        <!-- Slide 4: Ofertas -->
+        <div class="carousel-item slide-4">
+            <div class="container h-100 d-flex align-items-center">
+                <div class="carousel-content">
+                    <h2>Ofertas Especiales</h2>
+                    <p class="lead">Aprovecha nuestras ofertas y descuentos en productos seleccionados.</p>
+                    <a href="{% url 'catalogo' %}?ofertas=true" class="btn btn-dark btn-lg">Ver ofertas</a>
+                </div>
             </div>
-          </div>
         </div>
-      </div>
     </div>
 
     <!-- Controles -->
     <button class="carousel-control-prev" type="button" data-bs-target="#carouselMain" data-bs-slide="prev">
-      <span class="carousel-control-prev-icon"></span>
-      <span class="visually-hidden">Anterior</span>
+        <span class="carousel-control-prev-icon"></span>
+        <span class="visually-hidden">Anterior</span>
     </button>
     <button class="carousel-control-next" type="button" data-bs-target="#carouselMain" data-bs-slide="next">
-      <span class="carousel-control-next-icon"></span>
-      <span class="visually-hidden">Siguiente</span>
+        <span class="carousel-control-next-icon"></span>
+        <span class="visually-hidden">Siguiente</span>
     </button>
-  </div>
+</div>
+{% endblock %}
 
-  <!-- Productos Destacados -->
-  <div class="container mb-5">
+{% block content %}
+<!-- Productos Destacados -->
+<div class="container mb-5">
     <h2 class="mb-4 text-center">Productos Destacados</h2>
     <div class="row row-cols-1 row-cols-md-3 g-4">
-      {% for producto in productos_destacados %}
-      <div class="col">
-        <div class="card h-100">
-          {% if producto.imagen %}
-          <img src="{{ producto.imagen.url }}" class="card-img-top" alt="{{ producto.nombre }}" style="height: 200px; object-fit: cover;">
-          {% else %}
-          <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
-            <i class="bi bi-tools" style="font-size: 4rem; color: #6c757d;"></i>
-          </div>
-          {% endif %}
-          <div class="card-body">
-            <h5 class="card-title">{{ producto.nombre }}</h5>
-            <p class="card-text">{{ producto.descripcion|truncatechars:100 }}</p>
-          </div>
-          <div class="card-footer d-flex justify-content-between align-items-center">
-            <div>
-              {% if producto.precio_oferta %}
-              <small class="text-muted text-decoration-line-through">${{ producto.precio|floatformat:0 }}</small>
-              <span class="ms-2 fw-bold text-danger">${{ producto.precio_oferta|floatformat:0 }}</span>
-              <span class="badge bg-danger ms-2">-{{ producto.porcentaje_descuento }}%</span>
-              {% else %}
-              <span class="fw-bold">${{ producto.precio|floatformat:0 }}</span>
-              {% endif %}
+        {% for producto in productos_destacados %}
+        <div class="col">
+            <div class="card h-100">
+                {% if producto.imagen %}
+                <img src="{{ producto.imagen.url }}" class="card-img-top" alt="{{ producto.nombre }}" style="height: 200px; object-fit: cover;">
+                {% else %}
+                <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                    <i class="bi bi-tools" style="font-size: 4rem; color: #6c757d;"></i>
+                </div>
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title">{{ producto.nombre }}</h5>
+                    <p class="card-text">{{ producto.descripcion|truncatechars:100 }}</p>
+                </div>
+                <div class="card-footer d-flex justify-content-between align-items-center">
+                    <div>
+                        {% if producto.precio_oferta %}
+                        <small class="text-muted text-decoration-line-through">${{ producto.precio|floatformat:0 }}</small>
+                        <span class="ms-2 fw-bold text-danger">${{ producto.precio_oferta|floatformat:0 }}</span>
+                        <span class="badge bg-danger ms-2">-{{ producto.porcentaje_descuento }}%</span>
+                        {% else %}
+                        <span class="fw-bold">${{ producto.precio|floatformat:0 }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'detalle_producto' producto.id %}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                        {% if user.is_authenticated %}
+                            {% if producto.stock > 0 %}
+                                <button class="btn btn-success btn-sm agregar-carrito" data-id="{{ producto.id }}" data-stock="{{ producto.stock }}">
+                                    <i class="bi bi-cart-plus"></i>
+                                </button>
+                            {% else %}
+                                <button class="btn btn-secondary btn-sm" disabled>
+                                    <i class="bi bi-x-circle"></i>
+                                </button>
+                            {% endif %}
+                        {% else %}
+                            <a href="{% url 'login' %}" class="btn btn-outline-secondary btn-sm" title="Inicia sesión para agregar al carrito">
+                                <i class="bi bi-lock"></i>
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
-            <a href="{% url 'detalle_producto' producto.id %}" class="btn btn-primary btn-sm">Ver detalles</a>
-          </div>
         </div>
-      </div>
-      {% empty %}
-      <div class="col-12 text-center">
-        <p class="text-muted">No hay productos destacados disponibles en este momento.</p>
-      </div>
-      {% endfor %}
+        {% empty %}
+        <div class="col-12 text-center">
+            <p class="text-muted">No hay productos destacados disponibles en este momento.</p>
+        </div>
+        {% endfor %}
     </div>
-  </div>
+</div>
 
-  <!-- Footer -->
-  <footer class="bg-dark text-white text-center py-4">
-    <p class="mb-1">&copy; 2025 Ferremas. Todos los derechos reservados.</p>
-    <p class="mb-0">Contacto: contacto@ferremas.com | Tel: 59 2 1234 5678</p>
-  </footer>
+{% endblock %}
 
-  <!-- Bootstrap JS -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+{% block extra_js %}
+<script>
+// Obtener el token CSRF de las cookies
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
 
-  <!-- Agregar esto temporalmente en index.html para debug -->
-  <div style="display: none;">
-    Debug info:
-    Usuario autenticado: {{ user.is_authenticated }}
-    Username: {{ user.username }}
-    Email: {{ user.email }}
-    Grupos: {{ user.groups.all }}
-  </div>
-</body>
-</html>
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar el carrusel con configuración personalizada
+    const carousel = document.getElementById('carouselMain');
+    if (carousel) {
+        const carouselInstance = new bootstrap.Carousel(carousel, {
+            interval: 5000, // Cambiar cada 5 segundos
+            wrap: true,
+            keyboard: true
+        });
+    }
+    
+    // Agregar al carrito desde productos destacados
+    document.querySelectorAll('.agregar-carrito').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const productoId = this.dataset.id;
+            const stock = parseInt(this.dataset.stock);
+            
+            if (stock <= 0) {
+                Swal.fire({
+                    title: 'Sin Stock',
+                    text: 'Lo sentimos, este producto no tiene stock disponible',
+                    icon: 'warning',
+                    confirmButtonText: 'Entendido'
+                });
+                return;
+            }
+
+            // Mostrar diálogo de cantidad
+            Swal.fire({
+                title: 'Agregar al Carrito',
+                text: `¿Cuántas unidades deseas agregar? (Stock disponible: ${stock})`,
+                icon: 'question',
+                input: 'number',
+                inputValue: 1,
+                inputAttributes: {
+                    min: '1',
+                    max: stock.toString(),
+                    step: '1'
+                },
+                showCancelButton: true,
+                confirmButtonText: 'Agregar',
+                cancelButtonText: 'Cancelar',
+                inputValidator: (value) => {
+                    const cantidad = parseInt(value);
+                    if (!value || isNaN(cantidad) || cantidad <= 0) {
+                        return 'Por favor ingrese una cantidad válida mayor a 0';
+                    }
+                    if (cantidad > stock) {
+                        return `Lo sentimos, solo hay ${stock} unidades disponibles`;
+                    }
+                    return null;
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const cantidad = parseInt(result.value);
+                    
+                    fetch(`/carrito/agregar/${productoId}/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': getCookie('csrftoken'),
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ cantidad: cantidad })
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.json().then(data => {
+                                throw new Error(data.error || 'Error en la respuesta del servidor');
+                            });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.success) {
+                            // Actualizar el contador del carrito en el navbar
+                            if (window.actualizarContadorCarrito && data.total_carrito !== undefined && data.total_items !== undefined) {
+                                window.actualizarContadorCarrito(data.total_carrito, data.total_items);
+                            }
+                            
+                            Swal.fire({
+                                title: '¡Producto Agregado!',
+                                text: `Se agregaron ${cantidad} unidades al carrito`,
+                                icon: 'success',
+                                timer: 2000,
+                                timerProgressBar: true,
+                                showConfirmButton: false
+                            });
+                        } else {
+                            Swal.fire({
+                                title: 'Error',
+                                text: data.error || 'No se pudo agregar al carrito',
+                                icon: 'error'
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        Swal.fire({
+                            title: 'Error',
+                            text: error.message || 'Error al agregar el producto al carrito',
+                            icon: 'error'
+                        });
+                    });
+                }
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

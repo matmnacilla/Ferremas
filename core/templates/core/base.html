@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Ferremas{% endblock %}</title>
+    <!-- CSS de Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- Estilos personalizados -->
+    {% load static %}
+    <link href="{% static 'css/styles.css' %}" rel="stylesheet">
+    {% block extra_css %}{% endblock %}
+    <style>
+        .cart-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            border-radius: 50%;
+            background-color: #dc3545;
+            color: white;
+            min-width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .cart-link {
+            position: relative;
+            display: inline-block;
+            padding: 0.5rem;
+            color: white !important;
+            text-decoration: none;
+        }
+        .cart-link:hover {
+            color: rgba(255, 255, 255, 0.8) !important;
+        }
+        .cart-link.active {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 0.25rem;
+        }
+        .cart-tooltip {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border-radius: 0.25rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            padding: 0.5rem;
+            min-width: 200px;
+            display: none;
+            z-index: 1000;
+        }
+        .cart-link:hover .cart-tooltip {
+            display: block;
+        }
+    </style>
+</head>
+<body style="background-color: #f4f4f4;">
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-danger">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'index' %}">
+                <i class="bi bi-tools me-2"></i>
+                Ferremas
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'index' %}active{% endif %}" href="{% url 'index' %}">
+                            <i class="bi bi-house-door me-1"></i>Inicio
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'catalogo' %}active{% endif %}" href="{% url 'catalogo' %}">
+                            <i class="bi bi-grid me-1"></i>Catálogo
+                        </a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    {% if user.is_authenticated %}
+                        <li class="nav-item me-3">
+                            <a class="nav-link cart-link {% if request.resolver_match.url_name == 'carrito' %}active{% endif %}" 
+                               href="{% url 'carrito' %}" 
+                               title="Ver carrito">
+                                <i class="bi bi-cart3 fs-5"></i>
+                                {% if total_items_carrito > 0 %}
+                                    <span class="cart-badge">{{ total_items_carrito }}</span>
+                                    <div class="cart-tooltip">
+                                        <div class="text-dark">
+                                            <small>Total: ${{ total_carrito|floatformat:0 }}</small>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                                <i class="bi bi-person-circle me-1"></i>{{ user.username }}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                {% if user.is_staff %}
+                                    <li><a class="dropdown-item" href="{% url 'panelAdmin' %}">
+                                        <i class="bi bi-gear me-2"></i>Panel Admin
+                                    </a></li>
+                                {% endif %}
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{% url 'logout' %}">
+                                    <i class="bi bi-box-arrow-right me-2"></i>Cerrar sesión
+                                </a></li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li class="nav-item me-3">
+                            <a class="nav-link cart-link" href="{% url 'login' %}" title="Inicia sesión para usar el carrito">
+                                <i class="bi bi-cart3 fs-5"></i>
+                                <span class="cart-badge" style="background-color: #6c757d;">?</span>
+                                <div class="cart-tooltip">
+                                    <div class="text-dark">
+                                        <small>Inicia sesión para usar el carrito</small>
+                                    </div>
+                                </div>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'login' %}active{% endif %}" href="{% url 'login' %}">
+                                <i class="bi bi-box-arrow-in-right me-1"></i>Iniciar sesión
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'registrarse' %}active{% endif %}" href="{% url 'registrarse' %}">
+                                <i class="bi bi-person-plus me-1"></i>Registrarse
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    {# Bloque de integración de mensajes Django + SweetAlert2 #}
+    {% if messages %}
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        {% for message in messages %}
+        Swal.fire({
+          title: "{{ message.tags|capfirst }}",
+          text: "{{ message|escapejs }}",
+          icon: "{% if 'error' in message.tags %}error{% elif 'success' in message.tags %}success{% elif 'warning' in message.tags %}warning{% else %}info{% endif %}",
+          confirmButtonText: "OK"
+        });
+        {% endfor %}
+      });
+    </script>
+    {% endif %}
+
+    <!-- Contenido principal -->
+    {% block full_width_content %}{% endblock %}
+    <main class="container py-4">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4">
+                    <h5>Ferremas</h5>
+                    <p class="mb-0">Tu ferretería de confianza</p>
+                </div>
+                <div class="col-md-4">
+                    <h5>Contacto</h5>
+                    <p class="mb-0">
+                        <i class="bi bi-telephone me-2"></i>+56 9 1234 5678<br>
+                        <i class="bi bi-envelope me-2"></i>contacto@ferremas.cl
+                    </p>
+                </div>
+                <div class="col-md-4">
+                    <h5>Síguenos</h5>
+                    <div class="social-links">
+                        <a href="#" class="text-white me-2"><i class="bi bi-facebook"></i></a>
+                        <a href="#" class="text-white me-2"><i class="bi bi-instagram"></i></a>
+                        <a href="#" class="text-white"><i class="bi bi-whatsapp"></i></a>
+                    </div>
+                </div>
+            </div>
+            <hr class="my-4">
+            <p class="mb-0 text-center">&copy; 2025 Ferremas. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- SweetAlert2 CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- Scripts personalizados -->
+    {% block extra_js %}{% endblock %}
+    
+    <!-- Script para actualizar el carrito en tiempo real -->
+    <script>
+    // Función para actualizar el contador del carrito
+    function actualizarContadorCarrito(nuevoTotal, nuevoItems) {
+        const cartBadge = document.querySelector('.cart-badge');
+        const cartTooltip = document.querySelector('.cart-tooltip .text-dark small');
+        
+        if (cartBadge) {
+            if (nuevoItems > 0) {
+                cartBadge.textContent = nuevoItems;
+                cartBadge.style.display = 'flex';
+            } else {
+                cartBadge.style.display = 'none';
+            }
+        }
+        
+        if (cartTooltip) {
+            cartTooltip.textContent = `Total: $${nuevoTotal}`;
+        }
+    }
+    
+    // Función para obtener el token CSRF
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    // Hacer la función disponible globalmente
+    window.actualizarContadorCarrito = actualizarContadorCarrito;
+    window.getCookie = getCookie;
+    </script>
+</body>
+</html> 

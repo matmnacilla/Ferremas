@@ -40,17 +40,50 @@
         <span class="navbar-toggler-icon"></span>
       </button>
       <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav ms-auto">
+        <ul class="navbar-nav me-auto">
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'index' %}">Inicio</a>
+            <a class="nav-link" href="{% url 'index' %}">
+              <i class="bi bi-house-door me-1"></i>Inicio
+            </a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{% url 'catalogo' %}">Catálogo</a>
+            <a class="nav-link" href="{% url 'catalogo' %}">
+              <i class="bi bi-grid me-1"></i>Catálogo
+            </a>
           </li>
+        </ul>
+        <ul class="navbar-nav">
           {% if user.is_authenticated %}
-            <li class="nav-item">
+            <li class="nav-item me-3">
               <a class="nav-link active" href="{% url 'carrito' %}">
-                <i class="bi bi-cart3"></i> Carrito
+                <i class="bi bi-cart3 fs-5"></i>Carrito
+              </a>
+            </li>
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                <i class="bi bi-person-circle me-1"></i>{{ user.username }}
+              </a>
+              <ul class="dropdown-menu dropdown-menu-end">
+                {% if user.is_staff %}
+                  <li><a class="dropdown-item" href="{% url 'panelAdmin' %}">
+                    <i class="bi bi-gear me-2"></i>Panel Admin
+                  </a></li>
+                {% endif %}
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="{% url 'logout' %}">
+                  <i class="bi bi-box-arrow-right me-2"></i>Cerrar sesión
+                </a></li>
+              </ul>
+            </li>
+          {% else %}
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'login' %}">
+                <i class="bi bi-box-arrow-in-right me-1"></i>Iniciar sesión
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'registrarse' %}">
+                <i class="bi bi-person-plus me-1"></i>Registrarse
               </a>
             </li>
           {% endif %}
@@ -107,12 +140,12 @@
             </td>
             <td>
               <div class="input-group" style="width: 120px;">
-                <button class="btn btn-outline-secondary" type="button" onclick="actualizarCantidad({{ item.id }}, {{ item.cantidad|add:'-1' }})">-</button>
-                <input type="number" class="form-control text-center" value="{{ item.cantidad }}" min="1" max="{{ item.producto.stock }}" onchange="actualizarCantidad({{ item.id }}, this.value)">
-                <button class="btn btn-outline-secondary" type="button" onclick="actualizarCantidad({{ item.id }}, {{ item.cantidad|add:'1' }})">+</button>
+                <button class="btn btn-outline-secondary" type="button" onclick="decrementarCantidad({{ item.id }})">-</button>
+                <span class="form-control text-center" id="cantidad-{{ item.id }}">{{ item.cantidad }}</span>
+                <button class="btn btn-outline-secondary" type="button" onclick="incrementarCantidad({{ item.id }})">+</button>
               </div>
             </td>
-            <td>${{ item.subtotal|floatformat:0 }}</td>
+            <td id="subtotal-{{ item.id }}">${{ item.subtotal|floatformat:0 }}</td>
             <td>
               <button class="btn btn-sm btn-danger" onclick="eliminarDelCarrito({{ item.id }})">
                 <i class="fa fa-trash"></i>
@@ -132,7 +165,7 @@
         </a>
       </div>
       <div class="col-md-6 text-end">
-        <h4>Total: ${{ total_carrito|floatformat:0 }}</h4>
+        <h4>Total: $<span id="total-carrito">{{ total_carrito|floatformat:0 }}</span></h4>
         <a href="{% url 'procesoCompra' %}" class="btn btn-success btn-lg mt-2">
           Proceder al Pago
         </a>
@@ -158,13 +191,61 @@
 
   <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- SweetAlert2 CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   
   <!-- CSRF Token -->
   {% csrf_token %}
   
   <script>
+    function incrementarCantidad(itemId) {
+      const cantidadSpan = document.getElementById(`cantidad-${itemId}`);
+      const nuevaCantidad = parseInt(cantidadSpan.textContent) + 1;
+      actualizarCantidad(itemId, nuevaCantidad);
+    }
+
+    function decrementarCantidad(itemId) {
+      const cantidadSpan = document.getElementById(`cantidad-${itemId}`);
+      const nuevaCantidad = parseInt(cantidadSpan.textContent) - 1;
+      if (nuevaCantidad === 0) {
+        // Si la cantidad llega a 0, eliminar el producto
+        eliminarDelCarrito(itemId);
+      } else if (nuevaCantidad > 0) {
+        actualizarCantidad(itemId, nuevaCantidad);
+      }
+    }
+
     function actualizarCantidad(itemId, cantidad) {
+      // Validar que la cantidad sea un número válido
+      cantidad = parseInt(cantidad);
+      if (isNaN(cantidad) || cantidad < 0) {
+        Swal.fire({
+          title: 'Error',
+          text: 'La cantidad debe ser un número válido mayor o igual a 0',
+          icon: 'error'
+        });
+        return;
+      }
+      
+      // Si la cantidad es 0, eliminar el producto
+      if (cantidad === 0) {
+        eliminarDelCarrito(itemId);
+        return;
+      }
+
       const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+      const cantidadSpan = document.getElementById(`cantidad-${itemId}`);
+      
+      // Obtener el stock máximo del producto
+      const stockMaximo = parseInt(cantidadSpan.getAttribute('data-max') || '999999');
+      if (cantidad > stockMaximo) {
+        Swal.fire({
+          title: 'Stock Insuficiente',
+          text: `Solo hay ${stockMaximo} unidades disponibles`,
+          icon: 'warning'
+        });
+        return;
+      }
       
       fetch(`/carrito/actualizar/${itemId}/`, {
         method: 'POST',
@@ -172,61 +253,146 @@
           'X-CSRFToken': csrfToken,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ cantidad: parseInt(cantidad) })
+        body: JSON.stringify({ cantidad: cantidad })
       })
       .then(response => response.json())
       .then(data => {
         if (data.success) {
-          // Actualizar subtotal
-          document.getElementById(`subtotal-${itemId}`).textContent = `$${data.subtotal}`;
-          // Actualizar total
-          document.getElementById('total-carrito').textContent = `$${data.total}`;
+          if (data.eliminado) {
+            // Si el producto fue eliminado
+            const itemElement = document.getElementById(`item-${itemId}`);
+            if (itemElement) {
+              itemElement.remove();
+            }
+            
+            // Actualizar total
+            const totalElement = document.getElementById('total-carrito');
+            if (totalElement) {
+              totalElement.textContent = data.total.toLocaleString('es-CL');
+            }
+            
+            // Mostrar mensaje de eliminación
+            Swal.fire({
+              title: '¡Eliminado!',
+              text: 'Producto eliminado del carrito',
+              icon: 'success',
+              timer: 1500,
+              timerProgressBar: true,
+              showConfirmButton: false
+            });
+            
+            // Si no quedan productos, recargar la página
+            if (data.total === 0) {
+              setTimeout(() => {
+                location.reload();
+              }, 1500);
+            }
+          } else {
+            // Actualizar el span de cantidad inmediatamente
+            if (cantidadSpan) {
+              cantidadSpan.textContent = cantidad;
+            }
+            // Actualizar subtotal
+            const subtotalElement = document.getElementById(`subtotal-${itemId}`);
+            if (subtotalElement) {
+              subtotalElement.textContent = `$${data.subtotal.toLocaleString('es-CL')}`;
+            }
+            // Actualizar total
+            const totalElement = document.getElementById('total-carrito');
+            if (totalElement) {
+              totalElement.textContent = data.total.toLocaleString('es-CL');
+            }
+            
+            // No mostrar alerta para actualizaciones normales, solo actualizar la UI
+          }
         } else {
-          alert(data.error || 'Error al actualizar la cantidad');
-          // Recargar la página para restaurar el estado
+          Swal.fire({
+            title: 'Error',
+            text: data.error || 'Error al actualizar la cantidad',
+            icon: 'error'
+          });
           location.reload();
         }
       })
       .catch(error => {
         console.error('Error:', error);
-        alert('Error al actualizar la cantidad');
+        Swal.fire({
+          title: 'Error',
+          text: 'Error al actualizar la cantidad',
+          icon: 'error'
+        });
         location.reload();
       });
     }
 
     function eliminarDelCarrito(itemId) {
-      if (!confirm('¿Estás seguro de que deseas eliminar este producto del carrito?')) {
-        return;
-      }
-
-      const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-      
-      fetch(`/carrito/eliminar/${itemId}/`, {
-        method: 'POST',
-        headers: {
-          'X-CSRFToken': csrfToken,
-          'Content-Type': 'application/json'
-        }
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          // Eliminar la fila del producto
-          document.getElementById(`item-${itemId}`).remove();
-          // Actualizar total
-          document.getElementById('total-carrito').textContent = `$${data.total}`;
+      Swal.fire({
+        title: '¿Eliminar Producto?',
+        text: '¿Estás seguro de que deseas eliminar este producto del carrito?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
           
-          // Si no quedan productos, mostrar mensaje de carrito vacío
-          if (data.total === 0) {
-            location.reload();
-          }
-        } else {
-          alert(data.error || 'Error al eliminar el producto');
+          fetch(`/carrito/eliminar/${itemId}/`, {
+            method: 'POST',
+            headers: {
+              'X-CSRFToken': csrfToken,
+              'Content-Type': 'application/json'
+            }
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              // Eliminar la fila del producto
+              const itemElement = document.getElementById(`item-${itemId}`);
+              if (itemElement) {
+                itemElement.remove();
+              }
+              // Actualizar total
+              const totalElement = document.getElementById('total-carrito');
+              if (totalElement) {
+                totalElement.textContent = data.total.toLocaleString('es-CL');
+              }
+              
+              // Mostrar mensaje de éxito
+              Swal.fire({
+                title: '¡Eliminado!',
+                text: 'Producto eliminado del carrito',
+                icon: 'success',
+                timer: 1500,
+                timerProgressBar: true,
+                showConfirmButton: false
+              });
+              
+              // Si no quedan productos, mostrar mensaje de carrito vacío
+              if (data.total === 0) {
+                setTimeout(() => {
+                  location.reload();
+                }, 1500);
+              }
+            } else {
+              Swal.fire({
+                title: 'Error',
+                text: data.error || 'Error al eliminar el producto',
+                icon: 'error'
+              });
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            Swal.fire({
+              title: 'Error',
+              text: 'Error al eliminar el producto',
+              icon: 'error'
+            });
+          });
         }
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        alert('Error al eliminar el producto');
       });
     }
   </script>

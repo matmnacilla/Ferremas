@@ -136,38 +136,99 @@ class CarritoItem(models.Model):
     
     @property
     def subtotal(self):
-        return self.producto.precio * self.cantidad
+        return self.producto.precio_actual() * self.cantidad
 
 class Venta(models.Model):
     ESTADOS = [
         ('pendiente', 'Pendiente'),
         ('confirmada', 'Confirmada'),
+        ('preparada', 'Preparada'),
         ('enviada', 'Enviada'),
         ('entregada', 'Entregada'),
         ('cancelada', 'Cancelada'),
     ]
     
     METODOS_PAGO = [
-        ('transferencia', 'Transferencia Bancaria'),
-        ('tarjeta', 'Tarjeta de Crédito/Débito'),
-        ('efectivo', 'Efectivo'),
+        ('paypal', 'PayPal'),
+    ]
+    
+    PRIORIDADES = [
+        ('normal', 'Normal'),
+        ('alta', 'Alta'),
+        ('urgente', 'Urgente'),
     ]
     
     cliente = models.ForeignKey(User, on_delete=models.PROTECT)
     fecha = models.DateTimeField(auto_now_add=True)
     estado = models.CharField(max_length=20, choices=ESTADOS, default='pendiente')
-    metodo_pago = models.CharField(max_length=20, choices=METODOS_PAGO)
+    metodo_pago = models.CharField(max_length=20, choices=METODOS_PAGO, default='paypal')
     direccion_entrega = models.TextField()
+    ciudad = models.CharField(max_length=100, null=True, blank=True)
+    telefono_contacto = models.CharField(max_length=15, null=True, blank=True)
     total = models.IntegerField()
     notas = models.TextField(blank=True)
+    prioridad = models.CharField(max_length=20, choices=PRIORIDADES, default='normal')
+    fecha_limite_entrega = models.DateTimeField(null=True, blank=True)
+    ultima_actualizacion = models.DateTimeField(auto_now=True)
+    actualizado_por = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='ventas_actualizadas'
+    )
+    aceptada_por = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='ventas_aceptadas'
+    )
+    fecha_aceptacion = models.DateTimeField(null=True, blank=True)
+    
+    # Campos para PayPal
+    paypal_payment_id = models.CharField(max_length=100, blank=True, null=True)
+    paypal_payer_id = models.CharField(max_length=100, blank=True, null=True)
+    paypal_transaction_id = models.CharField(max_length=100, blank=True, null=True)
+    paypal_payment_status = models.CharField(max_length=50, blank=True, null=True)
     
     class Meta:
         verbose_name = 'Venta'
         verbose_name_plural = 'Ventas'
-        ordering = ['-fecha']
+        ordering = ['-prioridad', '-fecha']
     
     def __str__(self):
         return f"Venta #{self.id} - {self.cliente.username}"
+    
+    def actualizar_estado_paypal(self, payment_id, payer_id, transaction_id, status):
+        """Actualiza la información de PayPal en la venta"""
+        self.paypal_payment_id = payment_id
+        self.paypal_payer_id = payer_id
+        self.paypal_transaction_id = transaction_id
+        self.paypal_payment_status = status
+        if status == 'completed':
+            self.estado = 'confirmada'
+        self.save()
+    
+    def calcular_prioridad(self):
+        """Calcula la prioridad del pedido basado en diferentes factores"""
+        if self.estado == 'cancelada':
+            return 'normal'
+            
+        # Si tiene fecha límite y está cerca
+        if self.fecha_limite_entrega:
+            tiempo_restante = self.fecha_limite_entrega - timezone.now()
+            if tiempo_restante.total_seconds() < 3600:  # Menos de 1 hora
+                return 'urgente'
+            elif tiempo_restante.total_seconds() < 86400:  # Menos de 24 horas
+                return 'alta'
+        
+        # Si lleva más de 24 horas en el mismo estado
+        tiempo_en_estado = timezone.now() - self.ultima_actualizacion
+        if tiempo_en_estado.total_seconds() > 86400:  # Más de 24 horas
+            return 'alta'
+            
+        return 'normal'
 
 class DetalleVenta(models.Model):
     venta = models.ForeignKey(Venta, on_delete=models.CASCADE, related_name='detalles')
@@ -176,12 +237,53 @@ class DetalleVenta(models.Model):
     precio_unitario = models.IntegerField()
     subtotal = models.IntegerField()
     
+    # Campos para el proceso de preparación
+    preparado = models.BooleanField(default=False)
+    fecha_preparacion = models.DateTimeField(null=True, blank=True)
+    preparado_por = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='productos_preparados'
+    )
+    ubicacion_bodega = models.CharField(max_length=100, null=True, blank=True)
+    notas_preparacion = models.TextField(blank=True)
+    
     class Meta:
         verbose_name = 'Detalle de Venta'
         verbose_name_plural = 'Detalles de Venta'
     
     def __str__(self):
-        return f"{self.cantidad} x {self.producto.nombre}"
+        return f"{self.producto.nombre} x{self.cantidad} - Venta #{self.venta.id}"
+    
+    def marcar_preparado(self, usuario, notas=''):
+        """Marca el producto como preparado y registra la información"""
+        self.preparado = True
+        self.fecha_preparacion = timezone.now()
+        self.preparado_por = usuario
+        self.notas_preparacion = notas
+        self.save()
+        
+        # Verificar si todos los productos están preparados
+        todos_preparados = not DetalleVenta.objects.filter(
+            venta=self.venta,
+            preparado=False
+        ).exists()
+        
+        if todos_preparados and self.venta.estado == 'confirmada':
+            self.venta.estado = 'enviada'
+            self.venta.actualizado_por = usuario
+            self.venta.save()
+            
+            # Crear notificación
+            Notificacion.objects.create(
+                usuario=self.venta.cliente,
+                tipo='pedido',
+                mensaje=f'Tu pedido #{self.venta.id} ha sido preparado y está listo para envío'
+            )
+        
+        return todos_preparados
 
 class Empleado(models.Model):
     DEPARTAMENTOS = [

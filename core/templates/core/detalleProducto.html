@@ -1,146 +1,167 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>{{ producto.nombre }} - Ferremas</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
-  <style>
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}{{ producto.nombre }} - Ferremas{% endblock %}
+
+{% block extra_css %}
+<style>
     .product-image {
-      max-height: 400px;
-      object-fit: contain;
+        max-height: 400px;
+        object-fit: contain;
     }
     .stock-badge {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      z-index: 1;
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 1;
     }
-  </style>
-</head>
-<body style="background-color: #F8F9FA;">
+</style>
+{% endblock %}
 
-  <!-- Navbar -->
-  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <div class="container">
-      <a class="navbar-brand" href="{% url 'index' %}">
-        <i class="bi bi-tools me-2"></i>
-        Ferremas
-      </a>
-      <span class="text-white">Detalles del Producto</span>
-    </div>
-  </nav>
-
-  <!-- Detalles del producto -->
-  <div class="container py-5">
+{% block content %}
+<!-- Detalles del producto -->
+<div class="container py-5">
     <div class="row g-4">
-      <!-- Imagen del producto -->
-      <div class="col-md-5">
-        <div class="bg-light rounded shadow position-relative">
-          {% if producto.imagen %}
-            <img src="{{ producto.imagen.url }}" alt="{{ producto.nombre }}" class="product-image w-100 rounded">
-          {% else %}
-            <div class="d-flex align-items-center justify-content-center" style="height: 400px;">
-              <i class="bi bi-tools" style="font-size: 8rem; color: #6c757d;"></i>
+        <!-- Imagen del producto -->
+        <div class="col-md-5">
+            <div class="bg-light rounded shadow position-relative">
+                {% if producto.imagen %}
+                    <img src="{{ producto.imagen.url }}" alt="{{ producto.nombre }}" class="product-image w-100 rounded">
+                {% else %}
+                    <div class="d-flex align-items-center justify-content-center" style="height: 400px;">
+                        <i class="bi bi-tools" style="font-size: 8rem; color: #6c757d;"></i>
+                    </div>
+                {% endif %}
+                {% if producto.stock <= 5 and producto.stock > 0 %}
+                    <span class="badge bg-warning stock-badge">¡Últimas unidades!</span>
+                {% elif producto.stock == 0 %}
+                    <span class="badge bg-danger stock-badge">Sin stock</span>
+                {% endif %}
             </div>
-          {% endif %}
-          {% if producto.stock <= 5 and producto.stock > 0 %}
-            <span class="badge bg-warning stock-badge">¡Últimas unidades!</span>
-          {% elif producto.stock == 0 %}
-            <span class="badge bg-danger stock-badge">Sin stock</span>
-          {% endif %}
-        </div>
-      </div>
-
-      <!-- Info del producto -->
-      <div class="col-md-7">
-        <h2 class="mb-3">{{ producto.nombre }}</h2>
-        <p class="text-muted">Código: {{ producto.codigo }}</p>
-        {% if producto.precio_oferta %}
-          <div class="mb-3">
-            <small class="text-muted text-decoration-line-through h5">${{ producto.precio|floatformat:0 }}</small>
-            <h4 class="text-danger mb-2">${{ producto.precio_oferta|floatformat:0 }}</h4>
-            <span class="badge bg-danger">-{{ producto.porcentaje_descuento }}% OFF</span>
-          </div>
-        {% else %}
-          <h4 class="text-success mb-3">${{ producto.precio|floatformat:0 }}</h4>
-        {% endif %}
-
-        <p>{{ producto.descripcion }}</p>
-
-        <ul class="list-unstyled mb-3">
-          <li><i class="fa fa-check text-success me-2"></i> Categoría: {{ producto.categoria.nombre }}</li>
-          <li><i class="fa fa-check text-success me-2"></i> Stock disponible: {{ producto.stock }} unidades</li>
-          <li><i class="fa fa-check text-success me-2"></i> Garantía de calidad Ferremas</li>
-        </ul>
-
-        <!-- Cantidad y botones -->
-        <div class="d-flex align-items-center mb-3">
-          <label class="me-2">Cantidad:</label>
-          <input type="number" id="cantidad" value="1" min="1" max="{{ producto.stock }}" class="form-control w-25 me-3" {% if producto.stock == 0 %}disabled{% endif %}>
-          {% if producto.stock > 0 %}
-            <button class="btn btn-danger" onclick="agregarAlCarrito('{{ producto.id }}')">
-              <i class="fa fa-shopping-cart me-1"></i> Añadir al Carrito
-            </button>
-          {% else %}
-            <button class="btn btn-secondary" disabled>
-              <i class="fa fa-times-circle me-1"></i> No Disponible
-            </button>
-          {% endif %}
         </div>
 
-        <!-- Botón volver -->
-        <a href="{% url 'catalogo' %}" class="btn btn-outline-secondary mt-3">
-          <i class="fa fa-arrow-left me-1"></i> Volver a Catálogo
-        </a>
-      </div>
+        <!-- Info del producto -->
+        <div class="col-md-7">
+            <h2 class="mb-3">{{ producto.nombre }}</h2>
+            <p class="text-muted">Código: {{ producto.codigo }}</p>
+            {% if producto.precio_oferta %}
+                <div class="mb-3">
+                    <small class="text-muted text-decoration-line-through h5">${{ producto.precio|floatformat:0 }}</small>
+                    <h4 class="text-danger mb-2">${{ producto.precio_oferta|floatformat:0 }}</h4>
+                    <span class="badge bg-danger">-{{ producto.porcentaje_descuento }}% OFF</span>
+                </div>
+            {% else %}
+                <h4 class="text-success mb-3">${{ producto.precio|floatformat:0 }}</h4>
+            {% endif %}
+
+            <p>{{ producto.descripcion }}</p>
+
+            <ul class="list-unstyled mb-3">
+                <li><i class="bi bi-check-circle-fill text-success me-2"></i> Categoría: {{ producto.categoria.nombre }}</li>
+                <li><i class="bi bi-check-circle-fill text-success me-2"></i> Stock disponible: {{ producto.stock }} unidades</li>
+                <li><i class="bi bi-check-circle-fill text-success me-2"></i> Garantía de calidad Ferremas</li>
+            </ul>
+
+            <!-- Cantidad y botones -->
+            <div class="d-flex align-items-center mb-3">
+                <label class="me-2">Cantidad:</label>
+                <input type="number" id="cantidad" value="1" min="1" max="{{ producto.stock }}" class="form-control w-25 me-3" {% if producto.stock == 0 %}disabled{% endif %}>
+                {% if user.is_authenticated %}
+                    {% if producto.stock > 0 %}
+                        <button class="btn btn-danger" onclick="agregarAlCarrito('{{ producto.id }}')">
+                            <i class="bi bi-cart-plus me-1"></i> Añadir al Carrito
+                        </button>
+                    {% else %}
+                        <button class="btn btn-secondary" disabled>
+                            <i class="bi bi-x-circle me-1"></i> No Disponible
+                        </button>
+                    {% endif %}
+                {% else %}
+                    <a href="{% url 'login' %}" class="btn btn-outline-secondary" title="Inicia sesión para agregar al carrito">
+                        <i class="bi bi-lock me-1"></i> Iniciar sesión para comprar
+                    </a>
+                {% endif %}
+            </div>
+
+            <!-- Botón volver -->
+            <a href="{% url 'catalogo' %}" class="btn btn-outline-secondary mt-3">
+                <i class="bi bi-arrow-left me-1"></i> Volver a Catálogo
+            </a>
+        </div>
     </div>
-  </div>
+</div>
 
-  <!-- Footer -->
-  <footer class="bg-dark text-white text-center py-3 mt-5">
-    <p class="mb-0">&copy; 2025 Ferremas - Todos los derechos reservados.</p>
-  </footer>
+{% endblock %}
 
-  <!-- Bootstrap JS -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-  
-  <!-- CSRF Token -->
-  {% csrf_token %}
-  
-  <script>
-    function agregarAlCarrito(productoId) {
-      const cantidad = document.getElementById('cantidad').value;
-      const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-      
-      fetch(`/carrito/agregar/${productoId}/`, {
+{% block extra_js %}
+<script>
+function agregarAlCarrito(productoId) {
+    const cantidad = document.getElementById('cantidad').value;
+    const cantidadNum = parseInt(cantidad);
+    const stock = parseInt(document.getElementById('cantidad').getAttribute('max') || '0');
+    
+    // Validar cantidad
+    if (isNaN(cantidadNum) || cantidadNum <= 0) {
+        Swal.fire({
+            title: 'Error',
+            text: 'Por favor ingrese una cantidad válida mayor a 0',
+            icon: 'error'
+        });
+        return;
+    }
+    
+    if (cantidadNum > stock) {
+        Swal.fire({
+            title: 'Stock Insuficiente',
+            text: `Lo sentimos, solo hay ${stock} unidades disponibles`,
+            icon: 'warning'
+        });
+        return;
+    }
+    
+    // Realizar la petición al servidor
+    fetch(`/carrito/agregar/${productoId}/`, {
         method: 'POST',
         headers: {
-          'X-CSRFToken': csrfToken,
-          'Content-Type': 'application/json'
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ cantidad: parseInt(cantidad) })
-      })
-      .then(response => {
+        body: JSON.stringify({ cantidad: cantidadNum })
+    })
+    .then(response => {
         if (!response.ok) {
-          throw new Error('Error en la respuesta del servidor');
+            return response.json().then(data => {
+                throw new Error(data.error || 'Error en la respuesta del servidor');
+            });
         }
         return response.json();
-      })
-      .then(data => {
+    })
+    .then(data => {
         if (data.success) {
-          alert('Producto agregado al carrito');
+            Swal.fire({
+                title: '¡Producto Agregado!',
+                text: `Se agregaron ${cantidadNum} unidades al carrito`,
+                icon: 'success',
+                timer: 2000,
+                timerProgressBar: true,
+                showConfirmButton: false
+            });
         } else {
-          alert(data.error || 'Error al agregar el producto');
+            Swal.fire({
+                title: 'Error',
+                text: data.error || 'No se pudo agregar al carrito',
+                icon: 'error'
+            });
         }
-      })
-      .catch(error => {
+    })
+    .catch(error => {
         console.error('Error:', error);
-        alert('Error al agregar el producto al carrito');
-      });
-    }
-  </script>
-</body>
-</html>
+        Swal.fire({
+            title: 'Error',
+            text: error.message || 'Error al agregar el producto al carrito',
+            icon: 'error'
+        });
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirmación de Compra - Ferremas</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+</head>
+<body style="background-color: #f4f4f4;">
+    <!-- Header -->
+    <nav class="navbar navbar-dark bg-danger">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'index' %}">
+                <i class="bi bi-tools me-2"></i> Ferremas
+            </a>
+        </div>
+    </nav>
+
+    <!-- Contenido -->
+    <div class="container my-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <i class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i>
+                        <h2 class="mt-3">¡Gracias por tu compra!</h2>
+                        <p class="lead">Tu pedido ha sido procesado exitosamente.</p>
+                        
+                        <div class="alert alert-info mt-4">
+                            <i class="bi bi-info-circle me-2"></i>
+                            Te hemos enviado un email con los detalles de tu compra.
+                            Si no lo recibes en los próximos minutos, revisa tu carpeta de spam.
+                        </div>
+
+                        {% if venta %}
+                        <div class="mt-4 d-flex justify-content-center">
+                            <div class="border rounded-4 shadow-lg p-4 bg-white w-100" style="max-width: 600px;">
+                                <div class="d-flex align-items-center mb-3">
+                                    <img src="/static/img/logo.png" alt="Ferremas" style="height: 48px; margin-right: 12px;">
+                                    <h4 class="mb-0 text-danger fw-bold">Ferremas</h4>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-6"><span class="fw-semibold"><i class="bi bi-receipt me-1"></i>N° de pedido:</span> #{{ venta.id }}</div>
+                                    <div class="col-6 text-end"><span class="fw-semibold"><i class="bi bi-calendar-event me-1"></i>Fecha:</span> {{ venta.fecha|date:'d/m/Y H:i' }}</div>
+                                </div>
+                                <div class="mb-2"><i class="bi bi-person-circle me-1"></i><span class="fw-semibold">Cliente:</span> {{ venta.cliente.get_full_name|default:venta.cliente.username }}</div>
+                                <div class="mb-2"><i class="bi bi-geo-alt me-1"></i><span class="fw-semibold">Dirección de entrega:</span> {{ venta.direccion_entrega }}, {{ venta.ciudad }}</div>
+                                <div class="mb-2"><i class="bi bi-telephone me-1"></i><span class="fw-semibold">Teléfono:</span> {{ venta.telefono_contacto }}</div>
+                                <div class="mb-2"><i class="bi bi-credit-card-2-front me-1"></i><span class="fw-semibold">Método de pago:</span> {{ venta.metodo_pago|title }}</div>
+                                <div class="mb-2"><i class="bi bi-info-circle me-1"></i><span class="fw-semibold">Estado:</span> {{ venta.estado|title }}</div>
+                                <hr class="my-3">
+                                <div class="table-responsive">
+                                    <table class="table table-bordered align-middle mb-0">
+                                        <thead class="table-danger">
+                                            <tr>
+                                                <th><i class="bi bi-box-seam"></i> Producto</th>
+                                                <th><i class="bi bi-hash"></i> Cantidad</th>
+                                                <th><i class="bi bi-currency-dollar"></i> Precio Unitario</th>
+                                                <th><i class="bi bi-cash-stack"></i> Subtotal</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for item in detalles %}
+                                            <tr>
+                                                <td>{{ item.producto.nombre }}</td>
+                                                <td>{{ item.cantidad }}</td>
+                                                <td>${{ item.precio_unitario|floatformat:0 }}</td>
+                                                <td>${{ item.subtotal|floatformat:0 }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                        <tfoot>
+                                            <tr>
+                                                <td colspan="3" class="text-end fw-bold">Total:</td>
+                                                <td class="fw-bold text-danger fs-5">${{ venta.total|floatformat:0 }}</td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                                {% if venta.notas %}
+                                <div class="mt-3"><i class="bi bi-chat-left-text me-1"></i><span class="fw-semibold">Notas:</span> {{ venta.notas }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        <div class="mt-4">
+                            <a href="{% url 'index' %}" class="btn btn-primary">
+                                <i class="bi bi-house me-2"></i> Volver al Inicio
+                            </a>
+                            <a href="{% url 'catalogo' %}" class="btn btn-outline-secondary ms-2">
+                                <i class="bi bi-grid me-2"></i> Seguir Comprando
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white text-center py-3 mt-5">
+        <p class="mb-0">&copy; 2025 Ferremas. Todos los derechos reservados.</p>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 

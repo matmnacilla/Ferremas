@@ -11,6 +11,8 @@
       background-color: #212529;
       color: white;
       padding: 20px;
+      display: flex;
+      flex-direction: column;
     }
     .sidebar a {
       color: white;
@@ -21,6 +23,19 @@
     .sidebar a:hover {
       background-color: #343a40;
       border-radius: 5px;
+    }
+    .sidebar .logout-section {
+      margin-top: auto;
+      padding-top: 20px;
+      border-top: 1px solid #495057;
+    }
+    .sidebar .logout-section a {
+      color: #dc3545 !important;
+      font-weight: bold;
+    }
+    .sidebar .logout-section a:hover {
+      background-color: #dc3545;
+      color: white !important;
     }
     .content {
       flex-grow: 1;
@@ -36,149 +51,494 @@
   <div class="sidebar">
     <h4>Vendedor - Ferremas</h4>
     <hr>
-    <a href="#" onclick="showSection('asesoramiento')">👥 Asesorar Cliente</a>
-    <a href="#" onclick="showSection('pedidos')">📦 Gestionar Pedidos</a>
-    <a href="#" onclick="showSection('pagos')">💰 Pagos y Facturación</a>
-    <a href="#" onclick="showSection('catalogo')">🛠 Catálogo</a>
-    <a href="#" onclick="showSection('historial')">📄 Historial de Clientes</a>
-    <a href="#" onclick="showSection('chat')">💬 Chat Interno</a>
+    <a href="?seccion=dashboard">📊 Dashboard</a>
+    <a href="?seccion=pedidos">📦 Gestionar Pedidos</a>
+    <a href="?seccion=catalogo">🛠 Catálogo</a>
+    <a href="?seccion=historial">📄 Historial de Compras</a>
+    <div class="logout-section">
+      <a href="#" onclick="confirmarLogout()">
+        <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
+      </a>
+    </div>
   </div>
 
   <div class="content">
-    <!-- Asesoramiento -->
-    <div id="asesoramiento" class="section active">
-      <h2>Asesoramiento al Cliente</h2>
-      <p>Busca productos según las necesidades del cliente:</p>
-      <form class="row g-3">
-        <div class="col-md-6">
-          <input type="text" class="form-control" placeholder="¿Qué necesita el cliente?">
-        </div>
-        <div class="col-md-4">
-          <select class="form-select">
-            <option selected>Seleccione categoría</option>
-            <option>Herramientas</option>
-            <option>Electricidad</option>
-            <option>Fontanería</option>
-          </select>
+    <!-- Dashboard de conteos -->
+    <div id="dashboard" class="section{% if seccion == 'dashboard' %} active{% endif %}">
+      <h2 class="mb-4"><i class="bi bi-bar-chart"></i> Dashboard</h2>
+      <div class="row mb-4">
+        <div class="col-md-2">
+          <div class="card text-bg-warning text-center shadow-sm">
+            <div class="card-body">
+              <h6 class="card-title mb-1">Pendientes</h6>
+              <h3 class="mb-0">{{ conteos.pendientes }}</h3>
+            </div>
+          </div>
         </div>
         <div class="col-md-2">
-          <button class="btn btn-primary w-100">Buscar</button>
+          <div class="card text-bg-success text-center shadow-sm">
+            <div class="card-body">
+              <h6 class="card-title mb-1">Confirmadas</h6>
+              <h3 class="mb-0">{{ conteos.confirmadas }}</h3>
+            </div>
+          </div>
         </div>
-      </form>
-    </div>
-
-    <!-- Pedidos -->
-    <div id="pedidos" class="section">
-      <h2>Gestionar Pedidos</h2>
-      <table class="table">
-        <thead><tr><th>#</th><th>Cliente</th><th>Estado</th><th>Acción</th></tr></thead>
-        <tbody>
-          <tr><td>2001</td><td>Mario López</td><td>En proceso</td><td><button class="btn btn-sm btn-success">Procesar</button></td></tr>
-          <tr><td>2002</td><td>Erika Vega</td><td>Listo para entrega</td><td><button class="btn btn-sm btn-secondary">Finalizar</button></td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Pagos -->
-    <div id="pagos" class="section">
-        <h2>Pagos y Facturación</h2>
-        <form class="row g-3">
-          <div class="col-md-6">
-            <input type="text" class="form-control" placeholder="Nombre del Cliente" required>
+        <div class="col-md-2">
+          <div class="card text-bg-danger text-center shadow-sm">
+            <div class="card-body">
+              <h6 class="card-title mb-1">Canceladas</h6>
+              <h3 class="mb-0">{{ conteos.canceladas }}</h3>
+            </div>
           </div>
-          <div class="col-md-6">
-            <input type="email" class="form-control" placeholder="Correo Electrónico del Cliente" required>
+        </div>
+        <div class="col-md-2">
+          <div class="card text-bg-primary text-center shadow-sm">
+            <div class="card-body">
+              <h6 class="card-title mb-1">Confirmadas</h6>
+              <h3 class="mb-0">{{ conteos.confirmadas }}</h3>
+            </div>
           </div>
-          <div class="col-md-6">
-            <input type="text" class="form-control" placeholder="Dirección de Envío" required>
+        </div>
+        <div class="col-md-2">
+          <div class="card text-bg-info text-center shadow-sm">
+            <div class="card-body">
+              <h6 class="card-title mb-1">Enviadas</h6>
+              <h3 class="mb-0">{{ conteos.enviadas }}</h3>
+            </div>
           </div>
-          <div class="col-md-6">
-            <input type="tel" class="form-control" placeholder="Número de Teléfono" required>
-          </div>
-          <div class="col-md-12">
-            <textarea class="form-control" rows="3" placeholder="Descripción de los productos" required></textarea>
-          </div>
-          <div class="col-md-6">
-            <input type="number" class="form-control" placeholder="Monto Total" required>
-          </div>
-          <div class="col-md-6">
-            <select class="form-select" required>
-              <option selected>Seleccione Método de Pago</option>
-              <option>Tarjeta de Crédito</option>
-              <option>Transferencia Bancaria</option>
-              <option>Efectivo</option>
-            </select>
-          </div>
-          <div class="col-md-12">
-            <button class="btn btn-primary w-100">Generar Factura</button>
-          </div>
-        </form>
-        <hr>
-        <p>Facturas Recientes:</p>
-        <ul class="list-group">
-          <li class="list-group-item d-flex justify-content-between">Factura #F1001 <button class="btn btn-sm btn-outline-secondary">Descargar</button></li>
-          <li class="list-group-item d-flex justify-content-between">Factura #F1002 <button class="btn btn-sm btn-outline-secondary">Descargar</button></li>
-        </ul>
+        </div>
       </div>
+    </div>
+    <!-- Pedidos -->
+    <div id="pedidos" class="section{% if seccion == 'pedidos' %} active{% endif %}">
+      <h2>Gestionar Pedidos</h2>
+      {% if ventas %}
+      <div class="table-responsive">
+        <table class="table table-bordered align-middle">
+          <thead class="table-danger">
+            <tr>
+              <th>ID</th>
+              <th>Fecha</th>
+              <th>Cliente</th>
+              <th>Dirección</th>
+              <th>Teléfono</th>
+              <th>Total</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for venta in ventas %}
+            <tr id="venta-{{ venta.id }}">
+              <td>#{{ venta.id }}</td>
+              <td>{{ venta.fecha|date:'d/m/Y H:i' }}</td>
+              <td>{{ venta.cliente.get_full_name|default:venta.cliente.username }}</td>
+              <td>{{ venta.direccion_entrega }}, {{ venta.ciudad }}</td>
+              <td>{{ venta.telefono_contacto }}</td>
+              <td>${{ venta.total|floatformat:0 }}</td>
+              <td>
+                <button class="btn btn-info btn-sm me-1" onclick="verDetallePedido({{ venta.id }})">
+                  <i class="bi bi-eye"></i> Ver Detalle
+                </button>
+                <button class="btn btn-success btn-sm me-1" onclick="aceptarVenta({{ venta.id }})">
+                  <i class="bi bi-check-circle"></i> Aceptar
+                </button>
+                <button class="btn btn-danger btn-sm" onclick="mostrarModalRechazo({{ venta.id }})">
+                  <i class="bi bi-x-circle"></i> Rechazar
+                </button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="alert alert-info">No hay ventas pendientes por gestionar.</div>
+      {% endif %}
+      <!-- Modal para motivo de rechazo -->
+      <div class="modal fade" id="modalRechazo" tabindex="-1" aria-labelledby="modalRechazoLabel" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="modalRechazoLabel">Motivo de rechazo</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <input type="hidden" id="ventaRechazoId">
+              <div class="mb-3">
+                <label for="motivoRechazo" class="form-label">Motivo</label>
+                <textarea class="form-control" id="motivoRechazo" rows="3" placeholder="Ingrese el motivo del rechazo..."></textarea>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+              <button type="button" class="btn btn-danger" onclick="rechazarVenta()">Rechazar Venta</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Modal Detalle Pedido -->
+      <div class="modal fade" id="modalDetallePedido" tabindex="-1" aria-labelledby="modalDetallePedidoLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="modalDetallePedidoLabel">Detalle del Pedido</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="detallePedidoBody">
+              <div class="text-center text-muted">Cargando...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <script>
+      function verDetallePedido(ventaId) {
+        console.log('Ver detalle pedido llamado con ID:', ventaId);
+        var modal = new bootstrap.Modal(document.getElementById('modalDetallePedido'));
+        modal.show();
+        document.getElementById('detallePedidoBody').innerHTML = '<div class="text-center text-muted">Cargando...</div>';
+        console.log('Haciendo fetch a:', `/obtener-detalle-pedido/${ventaId}/`);
+        fetch(`/obtener-detalle-pedido/${ventaId}/`)
+          .then(res => {
+            console.log('Respuesta recibida:', res);
+            return res.json();
+          })
+          .then(data => {
+            console.log('Datos recibidos:', data);
+            if (data.success) {
+              const v = data.venta;
+              let html = `<div class='mb-2'><strong>Cliente:</strong> ${v.cliente}</div>`;
+              html += `<div class='mb-2'><strong>Dirección:</strong> ${v.direccion_entrega}, ${v.ciudad}</div>`;
+              html += `<div class='mb-2'><strong>Teléfono:</strong> ${v.telefono_contacto}</div>`;
+              html += `<div class='mb-2'><strong>Fecha:</strong> ${v.fecha}</div>`;
+              html += `<div class='mb-2'><strong>Estado:</strong> ${v.estado}</div>`;
+              html += `<div class='mb-2'><strong>Notas:</strong> ${v.notas || '-'}</div>`;
+              html += `<hr><h6>Productos</h6>`;
+              html += `<div class='table-responsive'><table class='table table-bordered'><thead><tr><th>Producto</th><th>Cantidad</th><th>Precio Unitario</th><th>Subtotal</th></tr></thead><tbody>`;
+              v.detalles.forEach(item => {
+                html += `<tr><td>${item.producto.nombre}</td><td>${item.cantidad}</td><td>$${item.precio_unitario}</td><td>$${item.subtotal}</td></tr>`;
+              });
+              html += `</tbody><tfoot><tr><td colspan='3' class='text-end'><strong>Total:</strong></td><td><strong>$${v.total}</strong></td></tr></tfoot></table></div>`;
+              document.getElementById('detallePedidoBody').innerHTML = html;
+            } else {
+              document.getElementById('detallePedidoBody').innerHTML = `<div class='alert alert-danger'>${data.error || 'No se pudo cargar el detalle.'}</div>`;
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('detallePedidoBody').innerHTML = `<div class='alert alert-danger'>Error al cargar el detalle del pedido.</div>`;
+          });
+      }
+      function aceptarVenta(ventaId) {
+          Swal.fire({
+              title: '¿Aceptar Venta?',
+              text: '¿Estás seguro de que deseas aceptar esta venta?',
+              icon: 'question',
+              showCancelButton: true,
+              confirmButtonText: 'Sí, aceptar',
+              cancelButtonText: 'Cancelar',
+              confirmButtonColor: '#28a745',
+              cancelButtonColor: '#6c757d'
+          }).then((result) => {
+              if (result.isConfirmed) {
+                  const btn = event.target;
+                  btn.disabled = true;
+                  fetch(`/aceptar-venta/${ventaId}/`, {
+                      method: 'POST',
+                      headers: { 'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/x-www-form-urlencoded' }
+                  })
+                  .then(res => { console.log(res); return res.json().catch(() => ({success: false, error: 'Respuesta no válida del servidor'})); })
+                  .then(data => {
+                      if (data.success) {
+                          const fila = document.getElementById(`venta-${ventaId}`);
+                          if (fila) fila.remove();
+                          Swal.fire({
+                              title: '¡Venta Aceptada!',
+                              text: 'La venta ha sido aceptada correctamente',
+                              icon: 'success',
+                              timer: 1500,
+                              timerProgressBar: true,
+                              showConfirmButton: false
+                          }).then(() => {
+                              location.reload();
+                          });
+                      } else {
+                          if (data.error && data.error.includes('no encontrada')) {
+                              Swal.fire({
+                                  title: 'Venta No Encontrada',
+                                  text: 'La venta ya fue gestionada o no existe.',
+                                  icon: 'warning'
+                              });
+                          } else {
+                              Swal.fire({
+                                  title: 'Error',
+                                  text: data.error || 'Error al aceptar la venta.',
+                                  icon: 'error'
+                              });
+                          }
+                      }
+                      btn.disabled = false;
+                  });
+              }
+          });
+      }
+      function mostrarModalRechazo(ventaId) {
+          document.getElementById('ventaRechazoId').value = ventaId;
+          document.getElementById('motivoRechazo').value = '';
+          var modal = new bootstrap.Modal(document.getElementById('modalRechazo'));
+          modal.show();
+      }
+      function rechazarVenta() {
+          console.log("Intentando rechazar venta...");
+          var ventaId = document.getElementById('ventaRechazoId').value;
+          var motivo = document.getElementById('motivoRechazo').value;
+          
+          if (!motivo.trim()) {
+              Swal.fire({
+                  title: 'Motivo Requerido',
+                  text: 'Por favor, ingresa un motivo para el rechazo.',
+                  icon: 'warning'
+              });
+              return;
+          }
+          
+          fetch(`/rechazar-venta/${ventaId}/`, {
+              method: 'POST',
+              headers: { 'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/x-www-form-urlencoded' },
+              body: `motivo=${encodeURIComponent(motivo)}`
+          })
+          .then(res => res.json().catch(() => ({success: false, error: 'Respuesta no válida del servidor'})))
+          .then(data => {
+              if (data.success) {
+                  const fila = document.getElementById(`venta-${ventaId}`);
+                  if (fila) fila.remove();
+                  var modal = bootstrap.Modal.getInstance(document.getElementById('modalRechazo'));
+                  modal.hide();
+                  Swal.fire({
+                      title: '¡Venta Rechazada!',
+                      text: 'La venta ha sido rechazada correctamente',
+                      icon: 'success',
+                      timer: 1500,
+                      timerProgressBar: true,
+                      showConfirmButton: false
+                  }).then(() => {
+                      location.reload();
+                  });
+              } else {
+                  if (data.error && data.error.includes('no encontrada')) {
+                      Swal.fire({
+                          title: 'Venta No Encontrada',
+                          text: 'La venta ya fue gestionada o no existe.',
+                          icon: 'warning'
+                      });
+                  } else {
+                      Swal.fire({
+                          title: 'Error',
+                          text: data.error ? data.error : 'Error al rechazar la venta.',
+                          icon: 'error'
+                      });
+                  }
+              }
+          });
+      }
+      </script>
+    </div>
 
     <!-- Catálogo -->
-    <div id="catalogo" class="section">
+    <div id="catalogo" class="section{% if seccion == 'catalogo' %} active{% endif %}">
       <h2>Catálogo de Productos</h2>
-      <div class="row">
-        <div class="col-md-4">
-          <div class="card mb-3">
-            <div class="card-body">
-              <h5 class="card-title">Destornillador Philips</h5>
-              <p class="card-text">Marca: Truper | Stock: 30 unidades</p>
-              <button class="btn btn-outline-primary">Ver Detalles</button>
-            </div>
-          </div>
+      <form class="row g-3 mb-4">
+        <div class="col-md-6">
+          <input type="text" class="form-control" id="buscadorProducto" placeholder="Buscar por nombre..." oninput="filtrarCatalogo()">
         </div>
         <div class="col-md-4">
-          <div class="card mb-3">
-            <div class="card-body">
-              <h5 class="card-title">Caja de Herramientas</h5>
-              <p class="card-text">Completa con 32 piezas | Marca: Pretul</p>
-              <button class="btn btn-outline-primary">Ver Detalles</button>
-            </div>
-          </div>
+          <select class="form-select" id="filtroCategoria" onchange="filtrarCatalogo()">
+            <option value="">Todas las categorías</option>
+            {% for cat in categorias %}
+            <option value="{{ cat.nombre }}">{{ cat.nombre }}</option>
+            {% endfor %}
+          </select>
         </div>
-      </div>
-    </div>
-
-    <!-- Historial de Clientes -->
-    <div id="historial" class="section">
-      <h2>Historial de Clientes</h2>
-      <table class="table">
-        <thead><tr><th>Cliente</th><th>Última Compra</th><th>Total Gastado</th></tr></thead>
-        <tbody>
-          <tr><td>Ana Martínez</td><td>03/04/2025</td><td>$150.000</td></tr>
-          <tr><td>Julio Ramos</td><td>01/04/2025</td><td>$82.500</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Chat Interno -->
-    <div id="chat" class="section">
-      <h2>Chat Interno</h2>
-      <div class="border p-3 mb-3" style="height: 200px; overflow-y: scroll; background: #fff;">
-        <p><strong>Administrador:</strong> Por favor, no olvides verificar el pedido #2001.</p>
-        <p><strong>Tú:</strong> Entendido, lo haré ahora.</p>
-      </div>
-      <form class="d-flex">
-        <input type="text" class="form-control me-2" placeholder="Escribe un mensaje...">
-        <button class="btn btn-primary">Enviar</button>
       </form>
+      <div class="row" id="catalogoProductos">
+        {% for producto in productos %}
+        <div class="col-md-4 mb-4 producto-item" data-nombre="{{ producto.nombre|lower }}" data-categoria="{{ producto.categoria.nombre|lower }}">
+          <div class="card h-100">
+            <img src="{{ producto.imagen.url }}" class="card-img-top" alt="{{ producto.nombre }}" style="max-height:180px;object-fit:contain;">
+            <div class="card-body">
+              <h5 class="card-title">{{ producto.nombre }}
+                {% if producto.stock <= producto.stock_minimo %}
+                  <span class="badge bg-danger ms-2">¡Stock bajo!</span>
+                {% endif %}
+              </h5>
+              <p class="card-text mb-1"><strong>Categoría:</strong> {{ producto.categoria.nombre }}</p>
+              <p class="card-text mb-1"><strong>Precio:</strong> ${{ producto.precio|floatformat:0 }}</p>
+              <p class="card-text mb-1"><strong>Stock:</strong> {{ producto.stock }}</p>
+            </div>
+          </div>
+        </div>
+        {% empty %}
+        <div class="col-12"><div class="alert alert-info">No hay productos disponibles.</div></div>
+        {% endfor %}
+      </div>
+      <script>
+      function filtrarCatalogo() {
+        var texto = document.getElementById('buscadorProducto').value.toLowerCase();
+        var cat = document.getElementById('filtroCategoria').value.toLowerCase();
+        document.querySelectorAll('.producto-item').forEach(function(card) {
+          var nombre = card.getAttribute('data-nombre');
+          var categoria = card.getAttribute('data-categoria');
+          var visible = true;
+          if (texto && !nombre.includes(texto)) visible = false;
+          if (cat && categoria !== cat) visible = false;
+          card.style.display = visible ? '' : 'none';
+        });
+      }
+      </script>
+    </div>
+
+    <!-- Historial de Compras -->
+    <div id="historial" class="section{% if seccion == 'historial' %} active{% endif %}">
+      <h2>Historial de Compras</h2>
+      <div class="row g-3 mb-3">
+        <div class="col-md-4">
+          <input type="text" class="form-control" id="busquedaAjax" placeholder="Buscar por cliente, dirección, producto, ciudad, estado, ID...">
+        </div>
+        <div class="col-md-3">
+          <input type="date" class="form-control" id="fechaUnica" placeholder="Fecha">
+        </div>
+        <div class="col-md-3 d-flex gap-2 align-items-start">
+          <button class="btn btn-primary w-50" id="btnBuscarVentas"><i class="bi bi-search"></i> Buscar</button>
+          <button class="btn btn-outline-secondary w-50" id="btnRestaurarFiltros"><i class="bi bi-arrow-counterclockwise"></i> Restaurar</button>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-bordered align-middle" id="tablaHistorial">
+          <thead class="table-primary">
+            <tr>
+              <th>ID</th>
+              <th>Fecha</th>
+              <th>Cliente</th>
+              <th>Dirección</th>
+              <th>Ciudad</th>
+              <th>Teléfono</th>
+              <th>Productos</th>
+              <th>Total</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyHistorial">
+            <!-- Aquí se cargan los resultados por JS -->
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
+
+  <!-- Modal Detalle Productos (fuera de las secciones, antes de </body>) -->
+  <div class="modal fade" id="modalDetalleProductos" tabindex="-1" aria-labelledby="modalDetalleProductosLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalDetalleProductosLabel">Detalle de Productos</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body" id="detalleProductosBody">
+          <div class="text-center text-muted">Cargando...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CSRF Token -->
+  {% csrf_token %}
 
   <script>
     function showSection(id) {
       document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
       document.getElementById(id).classList.add('active');
     }
+
+    function renderVentas(ventas) {
+      const tbody = document.getElementById('tbodyHistorial');
+      tbody.innerHTML = '';
+      const q = document.getElementById('busquedaAjax').value.trim();
+      const fecha = document.getElementById('fechaUnica').value;
+      let mensaje = '';
+      if (ventas.length === 0) {
+        if (q && fecha) {
+          mensaje = 'No hay compras que coincidan con el texto y la fecha seleccionada.';
+        } else if (fecha) {
+          mensaje = 'No hay compras registradas para la fecha seleccionada.';
+        } else if (q) {
+          mensaje = 'No hay compras que coincidan con el texto ingresado.';
+        } else {
+          mensaje = 'No hay compras registradas.';
+        }
+        tbody.innerHTML = `<tr><td colspan="9"><div class="alert alert-info">${mensaje}</div></td></tr>`;
+        return;
+      }
+      ventas.forEach(venta => {
+        tbody.innerHTML += `
+          <tr>
+            <td>#${venta.id}</td>
+            <td>${venta.fecha}</td>
+            <td>${venta.cliente}</td>
+            <td>${venta.direccion}</td>
+            <td>${venta.ciudad}</td>
+            <td>${venta.telefono || '-'}</td>
+            <td>${venta.productos_html}</td>
+            <td>$${venta.total}</td>
+            <td>${venta.estado}</td>
+          </tr>
+        `;
+      });
+    }
+
+    function buscarVentasAjax() {
+      const q = document.getElementById('busquedaAjax').value;
+      const fecha = document.getElementById('fechaUnica').value;
+      let url = `/api/buscar-ventas/?q=${encodeURIComponent(q)}`;
+      if (fecha) url += `&fecha=${fecha}`;
+      fetch(url)
+        .then(res => res.json())
+        .then(data => renderVentas(data.ventas));
+    }
+
+    document.getElementById('busquedaAjax').addEventListener('input', buscarVentasAjax);
+    document.getElementById('fechaUnica').addEventListener('change', buscarVentasAjax);
+    document.getElementById('btnRestaurarFiltros').addEventListener('click', function() {
+      document.getElementById('busquedaAjax').value = '';
+      document.getElementById('fechaUnica').value = '';
+      buscarVentasAjax();
+    });
+
+    // Cargar todos al inicio
+    buscarVentasAjax();
   </script>
 
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- SweetAlert2 CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  
+  <script>
+    function confirmarLogout() {
+      Swal.fire({
+        title: '¿Cerrar Sesión?',
+        text: '¿Estás seguro de que deseas cerrar sesión?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, cerrar sesión',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          // Redirigir al logout
+          window.location.href = '/logout/';
+        }
+      });
+    }
+  </script>
 </body>
 </html>
 
